@@ -93,11 +93,11 @@ const DataInputScreen = () => {
   };
 
   return (
-    <Container className="mt-4">
+    <Container fluid className="mt-4">
       <h2>Data Input Dashboard</h2>
       <p className="text-muted">Fill in the required information needed.</p>
       
-      <Card className="mt-3">
+      <Card className="mt-3" style={{ backgroundColor: 'white' }}>
         <Card.Body>
           <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-3">
             
@@ -140,7 +140,7 @@ const DataInputScreen = () => {
                       <Form.Control 
                         type="text" 
                         name="blockSection" 
-                        placeholder="e.g., A" 
+                        placeholder="e.g., CPE-201" 
                         value={blockSection}
                         onChange={(e) => setBlockSection(e.target.value.toUpperCase())}
                         style={{ textTransform: 'uppercase' }}

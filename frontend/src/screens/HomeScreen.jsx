@@ -10,7 +10,13 @@ const HomeScreen = () => {
       <Row className="justify-content-center">
         <Col md={8}>
           <Card className="p-5 shadow-lg">
-            <h1 className="display-4 mb-4">AIMI Smart Schedule Optimizer</h1>
+            <div className="mb-4">
+              <img 
+                src="/images/AIMI2.png" 
+                alt="AIMI Smart Schedule Optimizer" 
+                style={{ maxWidth: '400px', width: '100%' }}
+              />
+            </div>
             <p className="lead mb-4">
               Generate optimized, conflict-free academic schedules with AI-powered insights.
               Streamline your scheduling process with intelligent automation.
