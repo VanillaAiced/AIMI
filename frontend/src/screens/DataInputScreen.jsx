@@ -93,11 +93,12 @@ const DataInputScreen = () => {
   };
 
   return (
-    <Container fluid className="mt-4">
-      <h2>Data Input Dashboard</h2>
-      <p className="text-muted">Fill in the required information needed.</p>
-      
-      <Card className="mt-3" style={{ backgroundColor: 'white' }}>
+    <div style={{ backgroundColor: 'white' }}>
+      <Container fluid style={{ padding: '20px', maxWidth: '100%' }}>
+        <h2>Data Input Dashboard</h2>
+        <p className="text-muted">Fill in the required information needed.</p>
+        
+        <Card className="mt-3" style={{ backgroundColor: 'white', border: 'none' }}>
         <Card.Body>
           <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-3">
             
@@ -375,6 +376,7 @@ const DataInputScreen = () => {
         </Card.Body>
       </Card>
     </Container>
+    </div>
   );
 };
 

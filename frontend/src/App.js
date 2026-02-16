@@ -17,7 +17,7 @@ function App() {
     <Router>
       <Header />
       <main className="py-3">
-        <Container>
+        <Container fluid style={{ padding: 0 }}>
           <Routes>
             <Route path="/" element={<HomeScreen />} />
             <Route path="/login" element={<LoginScreen />} />
