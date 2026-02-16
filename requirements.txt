@@ -1,0 +1,12 @@
+# Backend API
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# Scheduling Algorithm
+ortools==9.8.3296
+
+# Data Processing
+pandas==2.1.4
+
+# Configuration
+python-dotenv==1.0.0
