@@ -1,12 +1,10 @@
-# Backend API
-Flask==3.0.0
-Flask-CORS==4.0.0
+Django==6.0.2
+django-cors-headers==4.9.0
+whitenoise==6.4.0
 
-# Scheduling Algorithm
+# Optional/data-processing
 ortools==9.8.3296
-
-# Data Processing
 pandas==2.1.4
 
-# Configuration
+# Dev / config
 python-dotenv==1.0.0

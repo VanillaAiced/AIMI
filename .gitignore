@@ -1,0 +1,35 @@
+.DS_Store
+.env
+.env.*
+.vscode/
+.idea/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+env/
+ENV/
+myenv/
+venv.bak/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+backend/staticfiles/
+*.log
+
+# Node (frontend)
+frontend/build/
+frontend/node_modules/
+
+# Editor directories
+/.cache/
