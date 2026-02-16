@@ -1,0 +1,40 @@
+const products = [
+  {
+    _id: '1',
+    name: 'Sample Product One',
+    image: '/images/sample1.jpg',
+    description: 'This is a sample product description for product one.',
+    brand: 'AIMI',
+    category: 'Category A',
+    price: 29.99,
+    countInStock: 10,
+    rating: 4.5,
+    numReviews: 12,
+  },
+  {
+    _id: '2',
+    name: 'Sample Product Two',
+    image: '/images/sample2.jpg',
+    description: 'This is a sample product description for product two.',
+    brand: 'AIMI',
+    category: 'Category B',
+    price: 49.99,
+    countInStock: 7,
+    rating: 4.0,
+    numReviews: 8,
+  },
+  {
+    _id: '3',
+    name: 'Sample Product Three',
+    image: '/images/sample3.jpg',
+    description: 'This is a sample product description for product three.',
+    brand: 'AIMI',
+    category: 'Category A',
+    price: 19.99,
+    countInStock: 0,
+    rating: 3.5,
+    numReviews: 3,
+  },
+];
+
+export default products;
