@@ -53,11 +53,13 @@ User sees tabs or sections for:
 
 Subjects
 
-Professors & availability
+Professors
 
 Rooms
 
-Sections / departments
+Class Code
+
+Block
 
 User actions:
 
