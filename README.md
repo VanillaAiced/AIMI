@@ -17,7 +17,9 @@ AI analyzes the schedule
 User reviews, accepts, or regenerates
 
 User exports final schedule
-__________________________________________________________________
+
+---
+
 SCREEN-BY-SCREEN STORYBOARD
 
 Screen 1: Landing Page
@@ -32,8 +34,8 @@ Short description
 
 User action: Clicks Start Scheduling
 
-System action: Redirects to Login Screen (if not already Logged in)
---------------------------------------------------------
+## System action: Redirects to Login Screen (if not already Logged in)
+
 Screen 2: Login
 
 Username/Email
@@ -43,8 +45,8 @@ Password
 System actions:
 Verify Login
 
-Redirect to Data Input Dashboard
------------------------------------------------------------------
+## Redirect to Data Input Dashboard
+
 Screen 3: Data Input Dashboard
 
 User sees tabs or sections for:
@@ -69,16 +71,16 @@ Checks missing fields
 
 Checks invalid time ranges
 
-Stores validated data in database
--------------------------------------------------------------
+## Stores validated data in database
+
 Screen 4: Schedule Generation
 
 User sees:
 
 "Generate Schedule" button
 
-System action: Redirects to payment screen
-------------------------------------------------------------
+## System action: Redirects to payment screen
+
 Screen 5: Payment Gate (PayPal)
 
 User sees:
@@ -111,8 +113,8 @@ Data Structures involved:
 
 Priority Queue (subject priority)
 
-Hash Maps (availability lookup)
--------------------------------------------------------------------------
+## Hash Maps (availability lookup)
+
 Screen 6: Conflict Detection & Resolution
 
 System (not user-facing):
@@ -125,8 +127,8 @@ Enforces 12-hour max campus stay
 
 Output:
 
-Feasible schedule OR regeneration attempt
-------------------------------------------------------------------------------
+## Feasible schedule OR regeneration attempt
+
 Screen 7: Schedule Preview
 
 User sees:
@@ -141,8 +143,8 @@ Accept schedule
 
 Regenerate
 
-Request AI analysis
----------------------------------------------------------------------------------
+## Request AI analysis
+
 Screen 8: AI-Assisted Analysis
 
 System action:
@@ -161,8 +163,7 @@ User sees:
 
 Human-readable suggestions
 
-"Apply suggestions" (optional / advisory)
----------------------------------------------------------------------------------------
+## "Apply suggestions" (optional / advisory)
 
 Screen 9: Finalization & Export
 
@@ -177,7 +178,9 @@ System actions:
 Locks schedule
 
 Generates downloadable file
-______________________________________________________
+
+---
+
 SYSTEM SCOPE
 
 Primary User: Faculty staff / Department coordinator

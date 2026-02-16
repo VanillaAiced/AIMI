@@ -4,7 +4,13 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomeScreen from './screens/HomeScreen';
-import ProductScreen from './screens/ProductScreen';
+import LoginScreen from './screens/LoginScreen';
+import DataInputScreen from './screens/DataInputScreen';
+import ScheduleGenerationScreen from './screens/ScheduleGenerationScreen';
+import PaymentScreen from './screens/PaymentScreen';
+import SchedulePreviewScreen from './screens/SchedulePreviewScreen';
+import AIAnalysisScreen from './screens/AIAnalysisScreen';
+import ExportScreen from './screens/ExportScreen';
 
 function App() {
   return (
@@ -14,7 +20,13 @@ function App() {
         <Container>
           <Routes>
             <Route path="/" element={<HomeScreen />} />
-            <Route path="/product/:id" element={<ProductScreen />} />
+            <Route path="/login" element={<LoginScreen />} />
+            <Route path="/data-input" element={<DataInputScreen />} />
+            <Route path="/schedule-generation" element={<ScheduleGenerationScreen />} />
+            <Route path="/payment" element={<PaymentScreen />} />
+            <Route path="/schedule-preview" element={<SchedulePreviewScreen />} />
+            <Route path="/ai-analysis" element={<AIAnalysisScreen />} />
+            <Route path="/export" element={<ExportScreen />} />
           </Routes>
         </Container>
       </main>

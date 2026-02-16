@@ -13,7 +13,7 @@ const LoginScreen = ({ setUser }) => {
     const user = { email, name: email.split('@')[0] };
     localStorage.setItem('user', JSON.stringify(user));
     if (setUser) setUser(user);
-    navigate('/');
+    navigate('/data-input');
   };
 
   return (
