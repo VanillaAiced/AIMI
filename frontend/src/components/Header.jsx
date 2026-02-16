@@ -1,7 +1,8 @@
 import React from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
-const Header = () => {
+const Header = ({ user, onLogout }) => {
   return (
     <header>
       <Navbar bg="primary" variant="dark" expand="lg" collapseOnSelect>
@@ -10,9 +11,16 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <Nav.Link href="/login">
-                <i className="fas fa-user"></i> Sign In
-              </Nav.Link>
+              {!user ? (
+                <Nav.Link as={Link} to="/login">
+                  <i className="fas fa-user"></i> Sign In
+                </Nav.Link>
+              ) : (
+                <>
+                  <Nav.Link as={Link} to="#">{user.name || user.email}</Nav.Link>
+                  <Nav.Link onClick={onLogout}>Logout</Nav.Link>
+                </>
+              )}
             </Nav>
           </Navbar.Collapse>
         </Container>
