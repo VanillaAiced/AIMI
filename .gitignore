@@ -27,7 +27,8 @@ staticfiles/
 backend/staticfiles/
 *.log
 
-# Node (frontend)
+# Node
+node_modules/
 frontend/build/
 frontend/node_modules/
 

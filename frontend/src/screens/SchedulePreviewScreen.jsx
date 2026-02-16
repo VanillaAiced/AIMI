@@ -1,9 +1,11 @@
 import React from 'react';
 import { Container, Card, Table, Button, Badge, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 const SchedulePreviewScreen = () => {
   const navigate = useNavigate();
+  const { notify } = useNotification();
 
   // Load data from localStorage
   const scheduleData = JSON.parse(localStorage.getItem('scheduleData') || '{"subjects":[],"professors":[],"rooms":[],"sections":[]}');
@@ -66,7 +68,7 @@ const SchedulePreviewScreen = () => {
   };
 
   const handleRegenerate = () => {
-    alert('Regenerating schedule with different parameters...');
+    notify({ text: 'Regenerating schedule with different parameters...', variant: 'info' });
     window.location.reload();
   };
 

@@ -1,8 +1,26 @@
 import React from 'react';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { useNotification } from './NotificationProvider';
 
-const Header = () => {
+const Header = ({ user, setUser }) => {
+  const navigate = useNavigate();
+  const { notify } = useNotification();
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {
+      // ignore
+    }
+    localStorage.removeItem('user');
+    if (setUser) setUser(null);
+    console.debug('Header: calling notify signout');
+    notify({ text: 'Signed out', variant: 'info', timeout: 3000 });
+    navigate('/login');
+  };
+
   return (
     <header>
       <Navbar bg="light" variant="light" expand="lg" collapseOnSelect>
@@ -25,11 +43,22 @@ const Header = () => {
                   <i className="fas fa-home"></i> Home
                 </Nav.Link>
               </LinkContainer>
-              <LinkContainer to="/login">
-                <Nav.Link>
-                  <i className="fas fa-sign-in-alt"></i> Login
-                </Nav.Link>
-              </LinkContainer>
+              {user ? (
+                <>
+                  <Nav.Link onClick={()=>navigate('/data-input')}>
+                    <i className="fas fa-user"></i> {user.email}
+                  </Nav.Link>
+                  <Nav.Link onClick={handleLogout}>
+                    <i className="fas fa-sign-out-alt"></i> Logout
+                  </Nav.Link>
+                </>
+              ) : (
+                <LinkContainer to="/login">
+                  <Nav.Link>
+                    <i className="fas fa-sign-in-alt"></i> Login
+                  </Nav.Link>
+                </LinkContainer>
+              )}
             </Nav>
           </Navbar.Collapse>
         </Container>

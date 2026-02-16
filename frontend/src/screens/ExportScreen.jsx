@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Container, Card, Button, Alert, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 const ExportScreen = () => {
   const navigate = useNavigate();
   const [isFinalized, setIsFinalized] = useState(false);
+
+  const { notify } = useNotification();
   
   // Load schedule data
   const scheduleData = JSON.parse(localStorage.getItem('scheduleData') || '{"subjects":[],"professors":[],"rooms":[],"sections":[]}');
@@ -16,11 +19,11 @@ const ExportScreen = () => {
   const uniqueRooms = scheduleData.rooms.length;
 
   const handleExportPDF = () => {
-    alert('Exporting schedule as PDF...\nIn production, this would generate and download a PDF file.');
+    notify({ text: 'Exporting schedule as PDF... In production, this would generate and download a PDF file.', variant: 'info' });
   };
 
   const handleExportCSV = () => {
-    alert('Exporting schedule as CSV...\nIn production, this would generate and download a CSV file.');
+    notify({ text: 'Exporting schedule as CSV... In production, this would generate and download a CSV file.', variant: 'info' });
   };
 
   const handleFinalizeSchedule = () => {

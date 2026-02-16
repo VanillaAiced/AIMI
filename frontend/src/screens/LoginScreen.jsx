@@ -1,19 +1,46 @@
 import React, { useState } from 'react';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 const LoginScreen = ({ setUser }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { notify } = useNotification();
 
   const submitHandler = (e) => {
     e.preventDefault();
-    // Simple client-side sign-in (no backend). Store minimal user info.
-    const user = { email, name: email.split('@')[0] };
-    localStorage.setItem('user', JSON.stringify(user));
-    if (setUser) setUser(user);
-    navigate('/data-input');
+    (async () => {
+      try {
+        const resp = await fetch('/api/auth/login/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: email, password }),
+        });
+        if (!resp.ok) {
+          const text = await resp.text();
+          notify({ text: 'Login failed: ' + text, variant: 'danger' });
+          return;
+        }
+        const json = await resp.json();
+        const user = { email, name: json.username };
+        localStorage.setItem('user', JSON.stringify(user));
+        if (setUser) setUser(user);
+
+        if (json.created) {
+          notify({ text: 'Account created and signed in as ' + json.username, variant: 'success' });
+          // show success briefly then navigate
+          setTimeout(() => navigate('/data-input'), 900);
+          return;
+        }
+
+        notify({ text: 'Signed in as ' + json.username, variant: 'success' });
+        setTimeout(() => navigate('/data-input'), 400);
+      } catch (err) {
+        notify({ text: 'Login error: ' + err.message, variant: 'danger' });
+      }
+    })();
   };
 
   return (

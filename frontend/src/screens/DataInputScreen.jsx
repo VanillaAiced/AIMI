@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Tabs, Tab, Form, Button, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 const DataInputScreen = () => {
   const navigate = useNavigate();
@@ -12,84 +13,188 @@ const DataInputScreen = () => {
   const [subjectName, setSubjectName] = useState('');
   const [classCode, setClassCode] = useState('');
   const [blockSection, setBlockSection] = useState('');
+  const [subjectUnits, setSubjectUnits] = useState('');
+  const [subjectHours, setSubjectHours] = useState('');
+  const [editingSubjectId, setEditingSubjectId] = useState(null);
   const [profName, setProfName] = useState('');
   const [availability, setAvailability] = useState('');
+  const [editingProfId, setEditingProfId] = useState(null);
   const [roomName, setRoomName] = useState('');
+  const [roomCapacity, setRoomCapacity] = useState('');
+  const [roomTypeState, setRoomTypeState] = useState('');
+  const [editingRoomId, setEditingRoomId] = useState(null);
   const [sectionName, setSectionName] = useState('');
   const [department, setDepartment] = useState('');
+  const [sectionYearLevel, setSectionYearLevel] = useState('');
+  const [editingSectionId, setEditingSectionId] = useState(null);
+  const { notify } = useNotification();
 
-  const handleValidateData = () => {
+  const handleValidateData = async () => {
     // Simple validation
     if (subjects.length === 0 || professors.length === 0 || rooms.length === 0 || sections.length === 0) {
-      alert('Please add at least one entry in each category');
+      notify({ text: 'Please add at least one entry in each category', variant: 'danger' });
       return;
     }
-    // Save data to localStorage for schedule generation
-    localStorage.setItem('scheduleData', JSON.stringify({
-      subjects,
-      professors,
-      rooms,
-      sections
-    }));
-    alert('Data validated successfully!');
-    navigate('/schedule-generation');
+
+    const payload = { subjects, professors, rooms, sections };
+
+    try {
+      const resp = await fetch('/api/data/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        notify({ text: 'Failed to save data to server: ' + text, variant: 'danger' });
+        return;
+      }
+
+      const json = await resp.json();
+      // store locally as before and continue
+      localStorage.setItem('scheduleData', JSON.stringify(payload));
+      notify({ text: 'Data validated and saved (id: ' + (json.id || '-') + ')', variant: 'success' });
+      navigate('/schedule-generation');
+    } catch (err) {
+      notify({ text: 'Error saving data to server: ' + err.message, variant: 'danger' });
+    }
   };
 
   const addSubject = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    // update if editing
+    if (editingSubjectId) {
+      setSubjects(subjects.map(s => s.id === editingSubjectId ? {
+        ...s,
+        name: subjectName,
+        code: classCode,
+        block: blockSection,
+        units: subjectUnits,
+        hours: subjectHours
+      } : s));
+      // reset editing state
+      setEditingSubjectId(null);
+      setSubjectName('');
+      setClassCode('');
+      setBlockSection('');
+      setSubjectUnits('');
+      setSubjectHours('');
+      return;
+    }
+
     setSubjects([...subjects, {
       id: Date.now(),
       name: subjectName,
       code: classCode,
       block: blockSection,
-      units: formData.get('units'),
-      hours: formData.get('hours')
+      units: subjectUnits,
+      hours: subjectHours
     }]);
-    e.target.reset();
     setSubjectName('');
     setClassCode('');
     setBlockSection('');
+    setSubjectUnits('');
+    setSubjectHours('');
+  };
+
+  const editSubject = (id) => {
+    const s = subjects.find(x => x.id === id);
+    if (!s) return;
+    setEditingSubjectId(id);
+    setSubjectName(s.name || '');
+    setClassCode(s.code || '');
+    setBlockSection(s.block || '');
+    setSubjectUnits(s.units || '');
+    setSubjectHours(s.hours || '');
+  };
+
+  const deleteSubject = (id) => {
+    setSubjects(subjects.filter(s => s.id !== id));
+    if (editingSubjectId === id) {
+      setEditingSubjectId(null);
+      setSubjectName(''); setClassCode(''); setBlockSection(''); setSubjectUnits(''); setSubjectHours('');
+    }
   };
 
   const addProfessor = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    setProfessors([...professors, {
-      id: Date.now(),
-      name: profName,
-      availability: availability
-    }]);
-    e.target.reset();
-    setProfName('');
-    setAvailability('');
+    if (editingProfId) {
+      setProfessors(professors.map(p => p.id === editingProfId ? {...p, name: profName, availability } : p));
+      setEditingProfId(null);
+      setProfName(''); setAvailability('');
+      return;
+    }
+
+    setProfessors([...professors, { id: Date.now(), name: profName, availability }]);
+    setProfName(''); setAvailability('');
+  };
+
+  const editProfessor = (id) => {
+    const p = professors.find(x => x.id === id);
+    if (!p) return;
+    setEditingProfId(id);
+    setProfName(p.name || '');
+    setAvailability(p.availability || '');
+  };
+
+  const deleteProfessor = (id) => {
+    setProfessors(professors.filter(p => p.id !== id));
+    if (editingProfId === id) { setEditingProfId(null); setProfName(''); setAvailability(''); }
   };
 
   const addRoom = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    setRooms([...rooms, {
-      id: Date.now(),
-      name: roomName,
-      capacity: formData.get('capacity'),
-      type: formData.get('roomType')
-    }]);
-    e.target.reset();
-    setRoomName('');
+    if (editingRoomId) {
+      setRooms(rooms.map(r => r.id === editingRoomId ? {...r, name: roomName, capacity: roomCapacity, type: roomTypeState} : r));
+      setEditingRoomId(null);
+      setRoomName(''); setRoomCapacity(''); setRoomTypeState('');
+      return;
+    }
+
+    setRooms([...rooms, { id: Date.now(), name: roomName, capacity: roomCapacity, type: roomTypeState }]);
+    setRoomName(''); setRoomCapacity(''); setRoomTypeState('');
+  };
+
+  const editRoom = (id) => {
+    const r = rooms.find(x => x.id === id);
+    if (!r) return;
+    setEditingRoomId(id);
+    setRoomName(r.name || '');
+    setRoomCapacity(r.capacity || '');
+    setRoomTypeState(r.type || '');
+  };
+
+  const deleteRoom = (id) => {
+    setRooms(rooms.filter(r => r.id !== id));
+    if (editingRoomId === id) { setEditingRoomId(null); setRoomName(''); setRoomCapacity(''); setRoomTypeState(''); }
   };
 
   const addSection = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    setSections([...sections, {
-      id: Date.now(),
-      name: sectionName,
-      department: department,
-      yearLevel: formData.get('yearLevel')
-    }]);
-    e.target.reset();
-    setSectionName('');
-    setDepartment('');
+    if (editingSectionId) {
+      setSections(sections.map(s => s.id === editingSectionId ? {...s, name: sectionName, department, yearLevel: sectionYearLevel} : s));
+      setEditingSectionId(null);
+      setSectionName(''); setDepartment(''); setSectionYearLevel('');
+      return;
+    }
+
+    setSections([...sections, { id: Date.now(), name: sectionName, department, yearLevel: sectionYearLevel }]);
+    setSectionName(''); setDepartment(''); setSectionYearLevel('');
+  };
+
+  const editSection = (id) => {
+    const s = sections.find(x => x.id === id);
+    if (!s) return;
+    setEditingSectionId(id);
+    setSectionName(s.name || '');
+    setDepartment(s.department || '');
+    setSectionYearLevel(s.yearLevel || '');
+  };
+
+  const deleteSection = (id) => {
+    setSections(sections.filter(s => s.id !== id));
+    if (editingSectionId === id) { setEditingSectionId(null); setSectionName(''); setDepartment(''); setSectionYearLevel(''); }
   };
 
   return (
@@ -150,13 +255,16 @@ const DataInputScreen = () => {
                     </Form.Group>
                     <Form.Group className="mb-2">
                       <Form.Label>Units</Form.Label>
-                      <Form.Control type="number" name="units" placeholder="e.g., 3" required />
+                      <Form.Control type="number" name="units" value={subjectUnits} onChange={(e)=>setSubjectUnits(e.target.value)} placeholder="e.g., 3" required />
                     </Form.Group>
                     <Form.Group className="mb-2">
                       <Form.Label>Hours per Week</Form.Label>
-                      <Form.Control type="number" name="hours" placeholder="e.g., 3" required />
+                      <Form.Control type="number" name="hours" value={subjectHours} onChange={(e)=>setSubjectHours(e.target.value)} placeholder="e.g., 3" required />
                     </Form.Group>
-                    <Button type="submit" variant="primary">Add Subject</Button>
+                    <div className="d-flex gap-2">
+                      <Button type="submit" variant="primary">{editingSubjectId ? 'Update Subject' : 'Add Subject'}</Button>
+                      {editingSubjectId && <Button variant="secondary" onClick={()=>{setEditingSubjectId(null); setSubjectName(''); setClassCode(''); setBlockSection(''); setSubjectUnits(''); setSubjectHours('');}}>Cancel</Button>}
+                    </div>
                   </Form>
                 </Col>
                 <Col md={6}>
@@ -179,6 +287,10 @@ const DataInputScreen = () => {
                           <td>{sub.block}</td>
                           <td>{sub.units}</td>
                           <td>{sub.hours}</td>
+                          <td>
+                            <Button size="sm" variant="outline-primary" onClick={()=>editSubject(sub.id)}>Edit</Button>{' '}
+                            <Button size="sm" variant="outline-danger" onClick={()=>deleteSubject(sub.id)}>Delete</Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -234,6 +346,10 @@ const DataInputScreen = () => {
                         <tr key={prof.id}>
                           <td>{prof.name}</td>
                           <td>{prof.availability}</td>
+                          <td>
+                            <Button size="sm" variant="outline-primary" onClick={()=>editProfessor(prof.id)}>Edit</Button>{' '}
+                            <Button size="sm" variant="outline-danger" onClick={()=>deleteProfessor(prof.id)}>Delete</Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -262,18 +378,21 @@ const DataInputScreen = () => {
                     </Form.Group>
                     <Form.Group className="mb-2">
                       <Form.Label>Capacity</Form.Label>
-                      <Form.Control type="number" name="capacity" placeholder="e.g., 40" required />
+                      <Form.Control type="number" name="capacity" value={roomCapacity} onChange={(e)=>setRoomCapacity(e.target.value)} placeholder="e.g., 40" required />
                     </Form.Group>
                     <Form.Group className="mb-2">
                       <Form.Label>Room Type</Form.Label>
-                      <Form.Select name="roomType" required>
+                      <Form.Select name="roomType" value={roomTypeState} onChange={(e)=>setRoomTypeState(e.target.value)} required>
                         <option value="">Select type...</option>
                         <option value="LECTURE">LECTURE ROOM</option>
                         <option value="LAB">LABORATORY</option>
                         <option value="CONFERENCE">CONFERENCE ROOM</option>
                       </Form.Select>
                     </Form.Group>
-                    <Button type="submit" variant="primary">Add Room</Button>
+                    <div className="d-flex gap-2">
+                      <Button type="submit" variant="primary">{editingRoomId ? 'Update Room' : 'Add Room'}</Button>
+                      {editingRoomId && <Button variant="secondary" onClick={()=>{setEditingRoomId(null); setRoomName(''); setRoomCapacity(''); setRoomTypeState('');}}>Cancel</Button>}
+                    </div>
                   </Form>
                 </Col>
                 <Col md={6}>
@@ -292,6 +411,10 @@ const DataInputScreen = () => {
                           <td>{room.name}</td>
                           <td>{room.capacity}</td>
                           <td>{room.type}</td>
+                          <td>
+                            <Button size="sm" variant="outline-primary" onClick={()=>editRoom(room.id)}>Edit</Button>{' '}
+                            <Button size="sm" variant="outline-danger" onClick={()=>deleteRoom(room.id)}>Delete</Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -332,7 +455,7 @@ const DataInputScreen = () => {
                     </Form.Group>
                     <Form.Group className="mb-2">
                       <Form.Label>Year Level</Form.Label>
-                      <Form.Select name="yearLevel" required>
+                      <Form.Select name="yearLevel" value={sectionYearLevel} onChange={(e)=>setSectionYearLevel(e.target.value)} required>
                         <option value="">Select year...</option>
                         <option value="1">1ST YEAR</option>
                         <option value="2">2ND YEAR</option>
@@ -340,7 +463,10 @@ const DataInputScreen = () => {
                         <option value="4">4TH YEAR</option>
                       </Form.Select>
                     </Form.Group>
-                    <Button type="submit" variant="primary">Add Section</Button>
+                    <div className="d-flex gap-2">
+                      <Button type="submit" variant="primary">{editingSectionId ? 'Update Section' : 'Add Section'}</Button>
+                      {editingSectionId && <Button variant="secondary" onClick={()=>{setEditingSectionId(null); setSectionName(''); setDepartment(''); setSectionYearLevel('');}}>Cancel</Button>}
+                    </div>
                   </Form>
                 </Col>
                 <Col md={6}>
@@ -359,6 +485,10 @@ const DataInputScreen = () => {
                           <td>{sec.name}</td>
                           <td>{sec.department}</td>
                           <td>{sec.yearLevel}</td>
+                          <td>
+                            <Button size="sm" variant="outline-primary" onClick={()=>editSection(sec.id)}>Edit</Button>{' '}
+                            <Button size="sm" variant="outline-danger" onClick={()=>deleteSection(sec.id)}>Delete</Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

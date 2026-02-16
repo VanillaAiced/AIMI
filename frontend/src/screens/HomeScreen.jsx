@@ -4,7 +4,16 @@ import { useNavigate } from 'react-router-dom';
 
 const HomeScreen = () => {
   const navigate = useNavigate();
-
+  const handleStart = () => {
+    try {
+      const raw = localStorage.getItem('user');
+      const user = raw ? JSON.parse(raw) : null;
+      if (user) navigate('/data-input');
+      else navigate('/login');
+    } catch (e) {
+      navigate('/login');
+    }
+  };
   return (
     <Container className="text-center mt-5">
       <Row className="justify-content-center">
@@ -25,7 +34,7 @@ const HomeScreen = () => {
               <Button 
                 variant="primary" 
                 size="lg" 
-                onClick={() => navigate('/login')}
+                onClick={handleStart}
               >
                 Start Scheduling
               </Button>
