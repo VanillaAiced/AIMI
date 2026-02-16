@@ -14,6 +14,9 @@ const Header = () => {
               <LinkContainer to="/proposal">
                 <Nav.Link>Proposal</Nav.Link>
               </LinkContainer>
+              <LinkContainer to="/features">
+                <Nav.Link>Features</Nav.Link>
+              </LinkContainer>
               <Nav.Link href="/cart">
                 <i className="fas fa-shopping-cart"></i> Cart
               </Nav.Link>
