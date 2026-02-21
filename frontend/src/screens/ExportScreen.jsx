@@ -32,8 +32,29 @@ const ExportScreen = () => {
   };
 
   const handleStartNew = () => {
-    localStorage.clear();
-    navigate('/');
+    (async () => {
+      try {
+        const access = localStorage.getItem('accessToken');
+        if (access) {
+          const resp = await fetch('/api/auth/clear-data/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + access },
+          });
+          if (resp.ok) {
+            const json = await resp.json();
+            notify({ text: `Cleared data: ${JSON.stringify(json.deleted)}`, variant: 'success' });
+          } else {
+            const text = await resp.text();
+            notify({ text: 'Could not clear server data: ' + text, variant: 'warning' });
+          }
+        }
+      } catch (err) {
+        notify({ text: 'Error clearing data: ' + err.message, variant: 'danger' });
+      } finally {
+        localStorage.clear();
+        navigate('/');
+      }
+    })();
   };
 
   return (

@@ -18,7 +18,6 @@ def ping(request):
 	return JsonResponse({'status': 'ok'})
 
 
-def data_view(request):
 @api_view(['GET', 'POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -107,7 +106,6 @@ def data_view(request):
 	return JsonResponse({'status': 'ok', 'created': created})
 
 
-def signup_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -131,7 +129,6 @@ def signup_view(request):
 	return Response({'status': 'created', 'username': user.username, 'id': user.id, 'access': str(refresh.access_token), 'refresh': str(refresh)})
 
 
-def login_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -164,8 +161,6 @@ def login_view(request):
 	return Response({'status': 'ok', 'username': user.username, 'id': user.id, 'created': created_flag, 'access': str(refresh.access_token), 'refresh': str(refresh)})
 
 
-@csrf_exempt
-@require_http_methods(['POST'])
 @api_view(['POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -189,6 +184,31 @@ def logout_view(request):
 	section_qs.delete()
 
 	# For JWT we don't manage server-side session logout here; client should discard tokens
+	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'professors': prof_count, 'rooms': room_count, 'sections': section_count}})
+
+
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def clear_data_view(request):
+	"""Clear only the authenticated user's schedule-related data without logging them out."""
+	owner = request.user.username
+
+	subj_qs = Subject.objects.filter(owner_session=owner)
+	prof_qs = Professor.objects.filter(owner_session=owner)
+	room_qs = Room.objects.filter(owner_session=owner)
+	section_qs = Section.objects.filter(owner_session=owner)
+
+	subj_count = subj_qs.count()
+	prof_count = prof_qs.count()
+	room_count = room_qs.count()
+	section_count = section_qs.count()
+
+	subj_qs.delete()
+	prof_qs.delete()
+	room_qs.delete()
+	section_qs.delete()
+
 	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'professors': prof_count, 'rooms': room_count, 'sections': section_count}})
 
 
