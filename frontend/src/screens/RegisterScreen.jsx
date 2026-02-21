@@ -17,6 +17,7 @@ const RegisterScreen = () => {
     try {
       const resp = await fetch('/api/auth/signup/', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username || email, email, password }),
       });

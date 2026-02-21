@@ -15,6 +15,7 @@ const LoginScreen = ({ setUser }) => {
       try {
         const resp = await fetch('/api/auth/login/', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: email, password }),
         });

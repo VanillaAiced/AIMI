@@ -156,3 +156,4 @@ WHITENOISE_USE_FINDERS = True
 
 # Development CORS settings - allow frontend to access API during development
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True

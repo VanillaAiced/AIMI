@@ -10,7 +10,7 @@ const Header = ({ user, setUser }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout/', { method: 'POST' });
+      await fetch('/api/auth/logout/', { method: 'POST', credentials: 'include' });
     } catch (e) {
       // ignore
     }
