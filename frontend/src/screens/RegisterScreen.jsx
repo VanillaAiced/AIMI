@@ -17,7 +17,6 @@ const RegisterScreen = () => {
     try {
       const resp = await fetch('/api/auth/signup/', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username || email, email, password }),
       });
@@ -25,8 +24,14 @@ const RegisterScreen = () => {
         const text = await resp.text();
         return notify({ text: 'Signup failed: ' + text, variant: 'danger' });
       }
-      notify({ text: 'Signup successful — please sign in', variant: 'success' });
-      setTimeout(() => navigate('/login'), 700);
+      const json = await resp.json();
+      // store tokens and set user
+      if (json.access) localStorage.setItem('accessToken', json.access);
+      if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
+      const user = { email, name: json.username };
+      localStorage.setItem('user', JSON.stringify(user));
+      if (setTimeout) notify({ text: 'Signup successful — signed in as ' + json.username, variant: 'success' });
+      setTimeout(() => navigate('/data-input'), 700);
     } catch (err) {
       notify({ text: 'Signup error: ' + err.message, variant: 'danger' });
     }

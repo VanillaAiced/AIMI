@@ -10,11 +10,16 @@ const Header = ({ user, setUser }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout/', { method: 'POST', credentials: 'include' });
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      await fetch('/api/auth/logout/', { method: 'POST', headers });
     } catch (e) {
       // ignore
     }
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     if (setUser) setUser(null);
     console.debug('Header: calling notify signout');
     notify({ text: 'Signed out', variant: 'info', timeout: 3000 });

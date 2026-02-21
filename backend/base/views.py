@@ -1,12 +1,16 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from .models import Subject, Professor, Room, Section
 import json
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, logout
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponseBadRequest
+
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from rest_framework import status
 
 
 # Simple health endpoint for frontend integration testing
@@ -14,31 +18,27 @@ def ping(request):
 	return JsonResponse({'status': 'ok'})
 
 
-@csrf_exempt
-@require_http_methods(['GET', 'POST'])
+def data_view(request):
+@api_view(['GET', 'POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def data_view(request):
 	"""GET: list recent items for each model
 	   POST: accept JSON payload with keys subjects, professors, rooms, sections
 			 and create/update model instances accordingly
 	"""
 	if request.method == 'GET':
-		# return only items created in this session (if session exists), otherwise return recent global
-		session_key = request.session.session_key
-		if session_key:
-			subjects = list(Subject.objects.filter(owner_session=session_key).order_by('-created_at')[:50].values())
-			professors = list(Professor.objects.filter(owner_session=session_key).order_by('-created_at')[:50].values())
-			rooms = list(Room.objects.filter(owner_session=session_key).order_by('-created_at')[:50].values())
-			sections = list(Section.objects.filter(owner_session=session_key).order_by('-created_at')[:50].values())
-		else:
-			subjects = list(Subject.objects.order_by('-created_at')[:50].values())
-			professors = list(Professor.objects.order_by('-created_at')[:50].values())
-			rooms = list(Room.objects.order_by('-created_at')[:50].values())
-			sections = list(Section.objects.order_by('-created_at')[:50].values())
+		# return only items created by this user
+		username = request.user.username
+		subjects = list(Subject.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
+		professors = list(Professor.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
+		rooms = list(Room.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
+		sections = list(Section.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
 		return JsonResponse({'subjects': subjects, 'professors': professors, 'rooms': rooms, 'sections': sections})
 
 	# POST: parse JSON
 	try:
-		payload = json.loads(request.body.decode('utf-8'))
+		payload = request.data if hasattr(request, 'data') else json.loads(request.body.decode('utf-8'))
 	except Exception:
 		return HttpResponseBadRequest('Invalid JSON')
 
@@ -49,11 +49,8 @@ def data_view(request):
 
 	created = {'subjects': 0, 'professors': 0, 'rooms': 0, 'sections': 0}
 
-	# ensure session key exists so we can associate records
-	session_key = request.session.session_key
-	if not session_key:
-		request.session.create()
-		session_key = request.session.session_key
+	# identify owner by username (JWT-authenticated user)
+	owner = request.user.username
 
 	# Subjects: use code as unique identifier
 	for s in payload.get('subjects', []):
@@ -65,7 +62,7 @@ def data_view(request):
 			'block': s.get('block', ''),
 			'units': int(s.get('units') or 0),
 			'hours': int(s.get('hours') or 0),
-			'owner_session': session_key,
+			'owner_session': owner,
 		}
 		obj, created_flag = Subject.objects.update_or_create(code=code, defaults=defaults)
 		if created_flag:
@@ -76,7 +73,7 @@ def data_view(request):
 		name = p.get('name')
 		if not name:
 			continue
-		defaults = {'availability': p.get('availability', ''), 'owner_session': session_key}
+		defaults = {'availability': p.get('availability', ''), 'owner_session': owner}
 		obj, created_flag = Professor.objects.update_or_create(name=name, defaults=defaults)
 		if created_flag:
 			created['professors'] += 1
@@ -89,7 +86,7 @@ def data_view(request):
 		defaults = {
 			'capacity': int(r.get('capacity') or 0),
 			'room_type': r.get('type') or r.get('room_type') or 'LECTURE',
-			'owner_session': session_key,
+			'owner_session': owner,
 		}
 		obj, created_flag = Room.objects.update_or_create(name=name, defaults=defaults)
 		if created_flag:
@@ -102,7 +99,7 @@ def data_view(request):
 		year = sec.get('yearLevel') or sec.get('year_level')
 		if not name or not department or not year:
 			continue
-		defaults = {'year_level': int(year), 'owner_session': session_key}
+		defaults = {'year_level': int(year), 'owner_session': owner}
 		obj, created_flag = Section.objects.update_or_create(name=name, department=department, year_level=int(year), defaults=defaults)
 		if created_flag:
 			created['sections'] += 1
@@ -110,75 +107,76 @@ def data_view(request):
 	return JsonResponse({'status': 'ok', 'created': created})
 
 
-@csrf_exempt
-@require_http_methods(['POST'])
+def signup_view(request):
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def signup_view(request):
 	try:
-		payload = json.loads(request.body.decode('utf-8'))
+		payload = request.data if hasattr(request, 'data') else json.loads(request.body.decode('utf-8'))
 	except Exception:
-		return HttpResponseBadRequest('Invalid JSON')
+		return Response({'detail': 'Invalid JSON'}, status=status.HTTP_400_BAD_REQUEST)
 
 	username = payload.get('username') or payload.get('email')
 	email = payload.get('email')
 	password = payload.get('password')
 	if not username or not password:
-		return HttpResponseBadRequest('username and password required')
+		return Response({'detail': 'username and password required'}, status=status.HTTP_400_BAD_REQUEST)
 
 	if User.objects.filter(username=username).exists():
-		return JsonResponse({'status': 'error', 'message': 'username taken'}, status=400)
+		return Response({'status': 'error', 'message': 'username taken'}, status=status.HTTP_400_BAD_REQUEST)
 
 	user = User.objects.create_user(username=username, email=email, password=password)
-	return JsonResponse({'status': 'created', 'username': user.username, 'id': user.id})
+	# create JWT tokens
+	refresh = RefreshToken.for_user(user)
+	return Response({'status': 'created', 'username': user.username, 'id': user.id, 'access': str(refresh.access_token), 'refresh': str(refresh)})
 
 
-@csrf_exempt
-@require_http_methods(['POST'])
+def login_view(request):
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
 	try:
-		payload = json.loads(request.body.decode('utf-8'))
+		payload = request.data if hasattr(request, 'data') else json.loads(request.body.decode('utf-8'))
 	except Exception:
-		return HttpResponseBadRequest('Invalid JSON')
+		return Response({'detail': 'Invalid JSON'}, status=status.HTTP_400_BAD_REQUEST)
 
 	username = payload.get('username') or payload.get('email')
 	password = payload.get('password')
 	if not username or not password:
-		return HttpResponseBadRequest('username and password required')
+		return Response({'detail': 'username and password required'}, status=status.HTTP_400_BAD_REQUEST)
 
-	# Try to authenticate first
+	# Try to authenticate
 	user = authenticate(request, username=username, password=password)
 	created_flag = False
 
-	# If authentication failed, but the user does not exist, create the user (sign-up-on-login)
 	if user is None:
 		if not User.objects.filter(username=username).exists():
-			# create new user and authenticate
 			user = User.objects.create_user(username=username, email=payload.get('email') or '', password=password)
 			created_flag = True
 			user = authenticate(request, username=username, password=password)
 			if user is None:
-				return JsonResponse({'status': 'error', 'message': 'could not create user'}, status=500)
+				return Response({'status': 'error', 'message': 'could not create user'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 		else:
-			# user exists but wrong credentials
-			return JsonResponse({'status': 'error', 'message': 'invalid credentials'}, status=401)
+			return Response({'status': 'error', 'message': 'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-	login(request, user)
-	return JsonResponse({'status': 'ok', 'username': user.username, 'id': user.id, 'created': created_flag})
+	# return JWT tokens
+	refresh = RefreshToken.for_user(user)
+	return Response({'status': 'ok', 'username': user.username, 'id': user.id, 'created': created_flag, 'access': str(refresh.access_token), 'refresh': str(refresh)})
 
 
 @csrf_exempt
 @require_http_methods(['POST'])
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def logout_view(request):
-	# Delete only session-owned schedule-related data so admin data is preserved
-	session_key = request.session.session_key
-	if not session_key:
-		# nothing associated with this session
-		logout(request)
-		return JsonResponse({'status': 'ok', 'deleted': {}})
+	# Delete only data owned by this authenticated user
+	owner = request.user.username
 
-	subj_qs = Subject.objects.filter(owner_session=session_key)
-	prof_qs = Professor.objects.filter(owner_session=session_key)
-	room_qs = Room.objects.filter(owner_session=session_key)
-	section_qs = Section.objects.filter(owner_session=session_key)
+	subj_qs = Subject.objects.filter(owner_session=owner)
+	prof_qs = Professor.objects.filter(owner_session=owner)
+	room_qs = Room.objects.filter(owner_session=owner)
+	section_qs = Section.objects.filter(owner_session=owner)
 
 	subj_count = subj_qs.count()
 	prof_count = prof_qs.count()
@@ -190,18 +188,13 @@ def logout_view(request):
 	room_qs.delete()
 	section_qs.delete()
 
-	logout(request)
-	return JsonResponse({
-		'status': 'ok',
-		'deleted': {
-			'subjects': subj_count,
-			'professors': prof_count,
-			'rooms': room_count,
-			'sections': section_count,
-		}
-	})
+	# For JWT we don't manage server-side session logout here; client should discard tokens
+	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'professors': prof_count, 'rooms': room_count, 'sections': section_count}})
 
 
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def model_view(request, model):
 	"""Return JSON list for a given model name.
 
@@ -240,7 +233,9 @@ def model_view(request, model):
 	except Exception:
 		limit = 0
 
-	qs = Model.objects.order_by('-created_at')
+	# restrict to items owned by this user
+	owner = request.user.username
+	qs = Model.objects.filter(owner_session=owner).order_by('-created_at')
 	if limit and limit > 0:
 		qs = qs[:limit]
 

@@ -8,3 +8,5 @@ pandas==2.1.4
 
 # Dev / config
 python-dotenv==1.0.0
+djangorestframework==3.14.0
+djangorestframework-simplejwt==2.9.0

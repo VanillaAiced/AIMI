@@ -39,10 +39,13 @@ const DataInputScreen = () => {
     const payload = { subjects, professors, rooms, sections };
 
     try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const resp = await fetch('/api/data/', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       });
 

@@ -15,7 +15,6 @@ const LoginScreen = ({ setUser }) => {
       try {
         const resp = await fetch('/api/auth/login/', {
           method: 'POST',
-          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: email, password }),
         });
@@ -25,13 +24,17 @@ const LoginScreen = ({ setUser }) => {
           return;
         }
         const json = await resp.json();
+
+        // store tokens
+        if (json.access) localStorage.setItem('accessToken', json.access);
+        if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
+
         const user = { email, name: json.username };
         localStorage.setItem('user', JSON.stringify(user));
         if (setUser) setUser(user);
 
         if (json.created) {
           notify({ text: 'Account created and signed in as ' + json.username, variant: 'success' });
-          // show success briefly then navigate
           setTimeout(() => navigate('/data-input'), 900);
           return;
         }
