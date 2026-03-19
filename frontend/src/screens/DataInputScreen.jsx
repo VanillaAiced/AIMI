@@ -38,30 +38,82 @@ const DataInputScreen = () => {
 
     const payload = { subjects, professors, rooms, sections };
 
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const syncToServer = async () => {
+      try {
+        // 1) ensure room types exist
+        const roomTypes = {};
+        for (const r of rooms) {
+          const key = (r.type || r.room_type || '').toString();
+          if (!key || roomTypes[key]) continue;
+          const resp = await fetch('/api/room-types/', { method: 'POST', headers, body: JSON.stringify({ name: key }) });
+          if (resp.ok) {
+            const json = await resp.json();
+            roomTypes[key] = json.id;
+          } else {
+            // try to find existing
+            const list = await fetch(`/api/room-types/?search=${encodeURIComponent(key)}`);
+            if (list.ok) {
+              const data = await list.json();
+              if (data.length && data[0].id) roomTypes[key] = data[0].id;
+            }
+          }
+        }
+
+        // 2) create buildings/rooms
+        for (const r of rooms) {
+          const body = { name: r.name, capacity: Number(r.capacity) || 0, room_type: roomTypes[r.type || r.room_type] || null };
+          await fetch('/api/rooms/', { method: 'POST', headers, body: JSON.stringify(body) });
+        }
+
+        // 3) create courses (subjects)
+        for (const s of subjects) {
+          const body = { name: s.name, code: s.code, units: Number(s.units) || 0, duration_minutes: Number(s.hours) ? Number(s.hours) * 60 : 0, frequency_per_week: 1 };
+          await fetch('/api/courses/', { method: 'POST', headers, body: JSON.stringify(body) });
+        }
+
+        // 4) create professors
+        for (const p of professors) {
+          const body = { name: p.name, availability: p.availability || '' };
+          await fetch('/api/professors/', { method: 'POST', headers, body: JSON.stringify(body) });
+        }
+
+        // 5) create departments/subdepartments/blocks (sections)
+        for (const sec of sections) {
+          // create department
+          const deptResp = await fetch('/api/departments/', { method: 'POST', headers, body: JSON.stringify({ name: sec.department }) });
+          let deptId = null;
+          if (deptResp.ok) {
+            deptId = (await deptResp.json()).id;
+          }
+          const subResp = await fetch('/api/subdepartments/', { method: 'POST', headers, body: JSON.stringify({ name: sec.department, department: deptId }) });
+          let subId = null;
+          if (subResp.ok) subId = (await subResp.json()).id;
+          await fetch('/api/blocks/', { method: 'POST', headers, body: JSON.stringify({ code: sec.name, sub_department: subId, year: Number(sec.yearLevel) || 1 }) });
+        }
+
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    };
+
     try {
-      const token = localStorage.getItem('accessToken');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const resp = await fetch('/api/data/', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!resp.ok) {
-        const text = await resp.text();
-        notify({ text: 'Failed to save data to server: ' + text, variant: 'danger' });
+      const sync = await syncToServer();
+      if (!sync.ok) {
+        notify({ text: 'Error syncing to server: ' + sync.error, variant: 'danger' });
         return;
       }
 
-      const json = await resp.json();
-      // store locally as before and continue
+      // persist original payload locally as fallback
       localStorage.setItem('scheduleData', JSON.stringify(payload));
-      notify({ text: 'Data validated and saved (id: ' + (json.id || '-') + ')', variant: 'success' });
+      notify({ text: 'Data validated and synced', variant: 'success' });
       navigate('/schedule-generation');
     } catch (err) {
-      notify({ text: 'Error saving data to server: ' + err.message, variant: 'danger' });
+      notify({ text: 'Error during sync: ' + err.message, variant: 'danger' });
     }
   };
 
