@@ -103,29 +103,10 @@ const ExportScreen = () => {
   };
 
   const handleStartNew = () => {
-    (async () => {
-      try {
-        const access = localStorage.getItem('accessToken');
-        if (access) {
-          const resp = await fetch('/api/auth/clear-data/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + access },
-          });
-          if (resp.ok) {
-            const json = await resp.json();
-            notify({ text: `Cleared data: ${JSON.stringify(json.deleted)}`, variant: 'success' });
-          } else {
-            const text = await resp.text();
-            notify({ text: 'Could not clear server data: ' + text, variant: 'warning' });
-          }
-        }
-      } catch (err) {
-        notify({ text: 'Error clearing data: ' + err.message, variant: 'danger' });
-      } finally {
-        localStorage.clear();
-        navigate('/');
-      }
-    })();
+    // Clearing server-side data is disabled in production. Only clear client state.
+    localStorage.clear();
+    notify({ text: 'Client state cleared. Server data is preserved.', variant: 'info' });
+    navigate('/');
   };
 
   return (

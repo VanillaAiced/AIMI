@@ -280,48 +280,13 @@ def login_view(request):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-	# Delete only data owned by this authenticated user
-	owner = request.user.username
-
-	subj_qs = Course.objects.filter(owner_session=owner)
-	room_qs = Room.objects.filter(owner_session=owner)
-	section_qs = Block.objects.filter(owner_session=owner)
-
-	subj_count = subj_qs.count()
-	room_count = room_qs.count()
-	section_count = section_qs.count()
-
-	subj_qs.delete()
-	room_qs.delete()
-	section_qs.delete()
-
-	# For JWT we don't manage server-side session logout here; client should discard tokens
-	# Do not delete Professor rows on logout — these should persist and be manageable in admin
-	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'rooms': room_count, 'sections': section_count}})
+	# For JWT we don't manage server-side session logout here; client should discard tokens.
+	# Previously this endpoint deleted objects created during testing. That behavior
+	# is disabled for production: do not delete any user data on logout.
+	return Response({'status': 'ok', 'message': 'logout acknowledged; no server-side data deleted'})
 
 
-@api_view(['POST'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def clear_data_view(request):
-	"""Clear only the authenticated user's schedule-related data without logging them out."""
-	owner = request.user.username
 
-	subj_qs = Course.objects.filter(owner_session=owner)
-	room_qs = Room.objects.filter(owner_session=owner)
-	section_qs = Block.objects.filter(owner_session=owner)
-
-	# Count items to be deleted (do not delete Professor rows here)
-	subj_count = subj_qs.count()
-	room_count = room_qs.count()
-	section_count = section_qs.count()
-
-	# Delete only schedule-related items owned by this user.
-	subj_qs.delete()
-	room_qs.delete()
-	section_qs.delete()
-
-	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'rooms': room_count, 'sections': section_count}})
 
 
 @api_view(['GET'])
