@@ -118,6 +118,10 @@ class TimeSlotSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     room_requirement = serializers.PrimaryKeyRelatedField(queryset=models.RoomType.objects.all(), allow_null=True, required=False)
+    # display convenience fields
+    room_requirement_name = serializers.CharField(source='room_requirement.name', read_only=True)
+    professor_requirement_name = serializers.CharField(source='professor_requirement.name', read_only=True)
+    professor_requirement_department_name = serializers.CharField(source='professor_requirement.department.name', read_only=True)
 
     class Meta:
         model = models.Course
@@ -183,6 +187,87 @@ class CurriculumSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Curriculum
         fields = '__all__'
+
+    def _ordinal(self, n):
+        try:
+            num = int(n)
+        except Exception:
+            return str(n)
+        mod100 = num % 100
+        if 11 <= mod100 <= 13:
+            return f"{num}th"
+        if num % 10 == 1:
+            return f"{num}st"
+        if num % 10 == 2:
+            return f"{num}nd"
+        if num % 10 == 3:
+            return f"{num}rd"
+        return f"{num}th"
+
+    @transaction.atomic
+    def create(self, validated_data):
+        # allow incoming blocks to be set on creation; capture them then create
+        # record whether caller provided a meaningful name so we don't overwrite it
+        original_name = validated_data.get('name', None)
+        should_regen_name = (not original_name) or (isinstance(original_name, str) and (original_name.strip().lower() == 'curriculum' or original_name.strip().endswith('Curriculum')))
+        blocks = validated_data.pop('blocks', None)
+        sub = validated_data.get('sub_department')
+        # perform create
+        curriculum = super().create(validated_data)
+        # attach blocks if provided
+        if blocks is not None:
+            curriculum.blocks.set(blocks)
+
+        # auto-generate a sensible name if caller didn't provide one or used a placeholder
+        if should_regen_name:
+            sub_obj = sub
+            # ensure we have a SubDepartment instance
+            if not hasattr(sub_obj, 'name') and sub_obj is not None:
+                try:
+                    sub_obj = models.SubDepartment.objects.get(pk=sub_obj)
+                except Exception:
+                    sub_obj = None
+            gen_name = None
+            if sub_obj is not None:
+                # derive year from attached blocks if any
+                years = list(curriculum.blocks.values_list('year', flat=True))
+                years = sorted([y for y in years if y is not None])
+                if years:
+                    # format like "CPE 2nd Year"
+                    gen_name = f"{sub_obj.name} {self._ordinal(years[0])} Year"
+                else:
+                    gen_name = f"{sub_obj.name} Curriculum"
+            if gen_name:
+                curriculum.name = gen_name
+                curriculum.save()
+
+        return curriculum
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        # determine whether caller provided a name explicitly; if not, we'll regenerate
+        name_in_payload = 'name' in validated_data
+        # intercept blocks to set them explicitly after update
+        blocks = validated_data.pop('blocks', None)
+        sub_changed = 'sub_department' in validated_data
+        result = super().update(instance, validated_data)
+        if blocks is not None:
+            result.blocks.set(blocks)
+
+        # regenerate name when caller did not explicitly set a name and blocks/sub_department changed
+        if not name_in_payload and (blocks is not None or sub_changed):
+            sub_obj = result.sub_department
+            if sub_obj is not None:
+                years = list(result.blocks.values_list('year', flat=True))
+                years = sorted([y for y in years if y is not None])
+                if years:
+                    gen_name = f"{sub_obj.name} {self._ordinal(years[0])} Year"
+                else:
+                    gen_name = f"{sub_obj.name} Curriculum"
+                result.name = gen_name
+                result.save()
+
+        return result
 
 
 class YearLevelSerializer(serializers.ModelSerializer):

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Form, Row, Col } from 'react-bootstrap';
+import { Table, Button, Form, Row, Col, Modal } from 'react-bootstrap';
 
 const CurriculumScreen = () => {
   const ordinal = (n) => {
@@ -15,6 +15,7 @@ const CurriculumScreen = () => {
     }
   };
   const [curricula, setCurricula] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [subdepartments, setSubdepartments] = useState([]);
@@ -29,11 +30,12 @@ const CurriculumScreen = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       try {
-        const [depsR, subsR, curR, blR] = await Promise.all([
+        const [depsR, subsR, curR, blR, coursesR] = await Promise.all([
           fetch('/api/departments/'),
           fetch('/api/subdepartments/'),
           fetch('/api/curricula/'),
           fetch('/api/blocks/'),
+          fetch('/api/courses/'),
         ]);
         if (depsR.ok) {
           const dv = await depsR.json();
@@ -51,6 +53,10 @@ const CurriculumScreen = () => {
         if (blR.ok) {
           const bv = await blR.json();
           setBlocks(Array.isArray(bv) ? bv : (bv.results || []));
+        }
+        if (coursesR.ok) {
+          const cj = await coursesR.json();
+          setCourses(Array.isArray(cj) ? cj : (cj.results || []));
         }
       } catch (e) { /* ignore */ }
     };
@@ -123,6 +129,11 @@ const CurriculumScreen = () => {
   const [editingSubdeptId, setEditingSubdeptId] = useState('');
   const [editingYear, setEditingYear] = useState('');
 
+  // Courses modal state
+  const [showCoursesModal, setShowCoursesModal] = useState(false);
+  const [coursesCurriculum, setCoursesCurriculum] = useState(null);
+  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+
   const cancelEdit = () => {
     setEditingCurriculum(null);
     setEditingDeptId(''); setEditingSubdeptId(''); setEditingYear('');
@@ -155,6 +166,53 @@ const CurriculumScreen = () => {
         console.error('Failed to update curriculum', await r.text());
       }
     } catch (e) { console.error(e); }
+  };
+
+  const openCourses = async (curr) => {
+    // ensure courses list is loaded (already fetched on page load usually)
+    if (!courses || courses.length === 0) {
+      try {
+        const r = await fetch('/api/courses/');
+        if (r.ok) {
+          const j = await r.json();
+          setCourses(Array.isArray(j) ? j : (j.results || []));
+        }
+      } catch (e) { /* ignore */ }
+    }
+    setCoursesCurriculum(curr);
+    const courseIds = Array.isArray(curr.courses) ? curr.courses.map(x => (typeof x === 'number' ? x : (x && x.id ? x.id : null))).filter(Boolean) : [];
+    setSelectedCourseIds(courseIds);
+    setShowCoursesModal(true);
+  };
+
+  const toggleCourse = (id) => {
+    setSelectedCourseIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const saveCourses = async () => {
+    if (!coursesCurriculum) return;
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const r = await fetch(`/api/curricula/${coursesCurriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ courses: selectedCourseIds }) });
+      if (r.ok) {
+        const updated = await r.json();
+        setCurricula(list => list.map(x => x.id === updated.id ? updated : x));
+        setShowCoursesModal(false);
+        setCoursesCurriculum(null);
+        setSelectedCourseIds([]);
+      } else {
+        console.error('Failed to save curriculum courses', await r.text());
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const totalUnits = () => {
+    if (!selectedCourseIds || selectedCourseIds.length === 0) return 0;
+    const byId = {};
+    (courses || []).forEach(c => { byId[c.id] = c; });
+    return selectedCourseIds.reduce((s, id) => s + (byId[id] ? (Number(byId[id].units) || 0) : 0), 0);
   };
 
   // helper: subdepartments filtered by selected department
@@ -224,35 +282,35 @@ const CurriculumScreen = () => {
           <Col md={1}><Button type="submit">Create</Button></Col>
         </Row>
       </Form>
-      {editingCurriculum && (
-        <div className="mb-3 p-3 border">
-          <h5>Edit Curriculum</h5>
-          <Row className="align-items-center">
-            <Col md={3}>
+      <Modal show={!!editingCurriculum} onHide={cancelEdit} centered>
+        <Modal.Header closeButton><Modal.Title>Edit Curriculum</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={async (e)=>{ e.preventDefault(); await saveEdit(); }}>
+            <Form.Group className="mb-2">
+              <Form.Label>Department</Form.Label>
               <Form.Select value={editingDeptId} onChange={e=>{ setEditingDeptId(e.target.value); setEditingSubdeptId(''); }}>
                 <option value="">Select Department</option>
                 {departments.map(d=>(<option key={d.id} value={d.id}>{d.name}</option>))}
               </Form.Select>
-            </Col>
-            <Col md={4}>
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Sub-Department</Form.Label>
               <Form.Select value={editingSubdeptId} onChange={e=>setEditingSubdeptId(e.target.value)}>
                 <option value="">Select Sub-Department</option>
                 {(editingDeptId? subdepartments.filter(s=> (s.department===Number(editingDeptId) || (s.department && s.department.id===Number(editingDeptId)))) : []).map(s=>(<option key={s.id} value={s.id}>{s.name}</option>))}
               </Form.Select>
-            </Col>
-            <Col md={3}>
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Year</Form.Label>
               <Form.Select value={editingYear} onChange={e=>setEditingYear(e.target.value)}>
                 <option value="">Select Year</option>
                 {Array.from(new Set(blocks.filter(b=> (b.sub_department===Number(editingSubdeptId) || (b.sub_department && b.sub_department.id===Number(editingSubdeptId)))).map(b=>Number(b.year)))).filter(n=>!isNaN(n)).sort((a,b)=>a-b).map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
               </Form.Select>
-            </Col>
-            <Col md={2}>
-              <Button size="sm" className="me-2" onClick={saveEdit}>Save</Button>
-              <Button size="sm" variant="secondary" onClick={cancelEdit}>Cancel</Button>
-            </Col>
-          </Row>
-        </div>
-      )}
+            </Form.Group>
+            <div className="d-flex justify-content-end"><Button type="submit">Save</Button></div>
+          </Form>
+        </Modal.Body>
+      </Modal>
 
       <Table striped>
         <thead><tr><th>Department</th><th>Sub-Department</th><th>Year</th><th>Actions</th></tr></thead>
@@ -263,6 +321,7 @@ const CurriculumScreen = () => {
               <td>{r.subdepartment? (r.subdepartment.name || r.subdepartment) : ''}</td>
               <td>{Array.isArray(r.years) && r.years.length ? r.years.map(y=> `${ordinal(y)} Year`).join(', ') : ''}</td>
               <td>
+                <button className="btn btn-sm btn-outline-secondary me-2" onClick={()=>openCourses(r.curriculum)}>Courses</button>
                 <button className="btn btn-sm btn-outline-primary me-2" onClick={()=>handleEdit(r.curriculum)}>Edit</button>
                 <button className="btn btn-sm btn-outline-danger" onClick={()=>handleDelete(r.curriculum.id)}>Delete</button>
               </td>
@@ -270,6 +329,45 @@ const CurriculumScreen = () => {
           ))}
         </tbody>
       </Table>
+
+      <Modal show={showCoursesModal} onHide={()=>{ setShowCoursesModal(false); setCoursesCurriculum(null); setSelectedCourseIds([]); }} centered size="lg">
+        <Modal.Header closeButton><Modal.Title>Manage Courses</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <div className="mb-2">Select courses to include in this curriculum.</div>
+          <div className="d-flex justify-content-between mb-2">
+            <div />
+            <div>
+              <Button size="sm" variant="outline-secondary" className="me-2" onClick={()=> setSelectedCourseIds((courses||[]).map(c=>c.id))}>Select All</Button>
+              <Button size="sm" variant="outline-secondary" onClick={()=> setSelectedCourseIds([])}>Clear</Button>
+            </div>
+          </div>
+          <Table striped>
+            <thead><tr><th></th><th>Code</th><th>Name</th><th>Units</th><th></th></tr></thead>
+            <tbody>
+              {(courses || []).map(c => (
+                <tr key={c.id}>
+                  <td style={{width:30}}><Form.Check type="checkbox" checked={selectedCourseIds.includes(c.id)} onChange={()=>toggleCourse(c.id)} /></td>
+                  <td>{c.code}</td>
+                  <td>{c.name}</td>
+                  <td>{c.units || 0}</td>
+                  <td style={{width:120}}>
+                    {selectedCourseIds.includes(c.id) ? (
+                      <Button size="sm" variant="outline-danger" onClick={()=>toggleCourse(c.id)}>Remove</Button>
+                    ) : (
+                      <Button size="sm" variant="outline-primary" onClick={()=>toggleCourse(c.id)}>Add</Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <div className="mt-2 text-end"><strong>Total Units: {totalUnits()}</strong></div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={saveCourses}>Save</Button>
+          <Button variant="secondary" onClick={()=>{ setShowCoursesModal(false); setCoursesCurriculum(null); setSelectedCourseIds([]); }}>Cancel</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
