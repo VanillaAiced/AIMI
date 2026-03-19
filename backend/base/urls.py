@@ -17,6 +17,7 @@ router.register('course-offerings', api.CourseOfferingViewSet)
 router.register('curricula', api.CurriculumViewSet)
 router.register('year-levels', api.YearLevelViewSet)
 router.register('professors', api.ProfessorViewSet)
+router.register('students', api.StudentViewSet)
 router.register('schedule-entries', api.ScheduleEntryViewSet)
 
 urlpatterns = [

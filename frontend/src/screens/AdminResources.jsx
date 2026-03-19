@@ -3,7 +3,6 @@ import { Tabs, Tab, Row, Col, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import CoursesScreen from './CoursesScreen';
 import CurriculumScreen from './CurriculumScreen';
-import CourseOfferingsScreen from './CourseOfferingsScreen';
 
 const AdminResources = () => {
   const [tab, setTab] = useState('courses');
@@ -18,7 +17,6 @@ const AdminResources = () => {
       <Tabs activeKey={tab} onSelect={(k)=>setTab(k)} className="mb-3">
         <Tab eventKey="courses" title="Courses"><CoursesScreen/></Tab>
         <Tab eventKey="curricula" title="Curricula"><CurriculumScreen/></Tab>
-        <Tab eventKey="offerings" title="Offerings"><CourseOfferingsScreen/></Tab>
       </Tabs>
     </div>
   );

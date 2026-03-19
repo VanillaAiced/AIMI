@@ -176,7 +176,7 @@ const RegisterScreen = ({ setUser }) => {
                     <Form.Label>Block</Form.Label>
                     <Form.Select value={blockCode} onChange={(e)=>setBlockCode(e.target.value)}>
                       <option value="">-- Select Block --</option>
-                      {blocks.map(b=> <option key={b.id} value={b.code}>{b.code}</option>)}
+                      {blocks.map(b=> <option key={b.id} value={b.id}>{b.code}</option>)}
                     </Form.Select>
                   </Form.Group>
                   {/* Max Units is not required on signup; removed per UX change */}

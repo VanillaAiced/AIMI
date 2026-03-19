@@ -112,6 +112,28 @@ class ProfessorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
 
+class StudentViewSet(viewsets.ModelViewSet):
+    queryset = models.Student.objects.all()
+    serializer_class = serializers.StudentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        dept = self.request.query_params.get('department')
+        sub = self.request.query_params.get('sub_department')
+        year = self.request.query_params.get('year')
+        if dept:
+            qs = qs.filter(department__id=dept)
+        if sub:
+            qs = qs.filter(sub_department__id=sub)
+        if year:
+            try:
+                qs = qs.filter(year=int(year))
+            except Exception:
+                pass
+        return qs
+
+
 class ScheduleEntryViewSet(viewsets.ModelViewSet):
     queryset = models.ScheduleEntry.objects.all()
     serializer_class = serializers.ScheduleEntrySerializer

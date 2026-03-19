@@ -193,6 +193,39 @@ def signup_view(request):
 
 	# create JWT tokens
 	refresh = RefreshToken.for_user(user)
+	# If signup included academic info and role=student, create Student record
+	try:
+		if getattr(user, 'profile', None) and getattr(user.profile, 'role', None) == 'student':
+			from .models import Student, Department, SubDepartment, Block
+			dept = payload.get('department')
+			sub = payload.get('sub_department')
+			yr = payload.get('year')
+			blk = payload.get('block')
+			student_kwargs = {'user': user}
+			if dept:
+				if isinstance(dept, int) or (isinstance(dept, str) and dept.isdigit()):
+					student_kwargs['department'] = Department.objects.filter(id=int(dept)).first()
+				else:
+					student_kwargs['department'] = Department.objects.filter(name=dept).first()
+			if sub:
+				if isinstance(sub, int) or (isinstance(sub, str) and sub.isdigit()):
+					student_kwargs['sub_department'] = SubDepartment.objects.filter(id=int(sub)).first()
+				else:
+					student_kwargs['sub_department'] = SubDepartment.objects.filter(name=sub).first()
+			if yr:
+				try:
+					student_kwargs['year'] = int(yr)
+				except Exception:
+					pass
+			if blk:
+				if isinstance(blk, int) or (isinstance(blk, str) and blk.isdigit()):
+					student_kwargs['block'] = Block.objects.filter(id=int(blk)).first()
+				else:
+					student_kwargs['block'] = Block.objects.filter(code=blk).first()
+			# create or update
+			Student.objects.update_or_create(user=user, defaults=student_kwargs)
+	except Exception:
+		pass
 	return Response({'status': 'created', 'username': user.username, 'id': user.id, 'access': str(refresh.access_token), 'refresh': str(refresh), 'role': getattr(user.profile, 'role', 'student')})
 
 

@@ -179,6 +179,17 @@ class Professor(models.Model):
 		return self.name
 
 
+class Student(models.Model):
+	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student')
+	department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+	sub_department = models.ForeignKey(SubDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+	year = models.IntegerField(null=True, blank=True)
+	block = models.ForeignKey(Block, on_delete=models.SET_NULL, null=True, blank=True)
+
+	def __str__(self):
+		return f"{self.user.username} (Student)"
+
+
 # Schedule entries (one per scheduled class session)
 class ScheduleEntry(models.Model):
 	course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, related_name='schedule_entries')

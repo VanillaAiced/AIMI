@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 
 # Register your models here.
 from .models import (
@@ -15,6 +16,7 @@ from .models import (
 	Curriculum,
 	YearLevel,
 	Professor,
+	Student,
 	ScheduleEntry,
 )
 
@@ -89,6 +91,57 @@ class YearLevelAdmin(admin.ModelAdmin):
 class ProfessorAdmin(admin.ModelAdmin):
 	list_display = ('name', 'email', 'department', 'sub_department', 'max_units', 'max_hours')
 	search_fields = ('name', 'email')
+	actions_on_top = True
+	actions_on_bottom = True
+
+	actions = ['delete_with_user']
+
+	def delete_with_user(self, request, queryset):
+		User = get_user_model()
+		users_to_delete = []
+		for prof in queryset:
+			# try to find a corresponding User by email or username
+			user = None
+			try:
+				if prof.email:
+					user = User.objects.filter(email__iexact=prof.email).first()
+				if not user:
+					user = User.objects.filter(username__iexact=prof.name).first()
+			except Exception:
+				user = None
+			if user:
+				users_to_delete.append(user)
+		# delete professors first
+		queryset.delete()
+		# then delete matched users
+		for u in users_to_delete:
+			try:
+				u.delete()
+			except Exception:
+				pass
+	delete_with_user.short_description = 'Delete selected professors and linked users (if found)'
+
+
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+	list_display = ('user', 'department', 'sub_department', 'year', 'block')
+	search_fields = ('user__username', 'user__email')
+	actions_on_top = True
+	actions_on_bottom = True
+
+	actions = ['delete_with_user']
+
+	def delete_with_user(self, request, queryset):
+		users = [s.user for s in queryset if getattr(s, 'user', None)]
+		# delete student records first
+		queryset.delete()
+		# then delete corresponding User objects
+		for u in users:
+			try:
+				u.delete()
+			except Exception:
+				pass
+	delete_with_user.short_description = 'Delete selected students and their linked user accounts'
 
 
 @admin.register(ScheduleEntry)

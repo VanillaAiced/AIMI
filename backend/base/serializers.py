@@ -198,6 +198,15 @@ class ProfessorSerializer(serializers.ModelSerializer):
         model = models.Professor
         fields = '__all__'
 
+
+class StudentSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
+    block_code = serializers.CharField(source='block.code', read_only=True)
+    class Meta:
+        model = models.Student
+        fields = '__all__'
+
     def validate_max_units(self, value):
         if value is not None and value < 0:
             raise serializers.ValidationError('max_units must be non-negative')
