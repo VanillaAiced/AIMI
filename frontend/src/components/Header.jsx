@@ -51,7 +51,8 @@ const Header = ({ user, setUser }) => {
               {user ? (
                 <>
                   <Nav.Link onClick={()=>{
-                    const role = (user && user.role) || JSON.parse(localStorage.getItem('user') || '{}').role || 'student';
+                    const role = (user && user.role);
+                    if (!role) return navigate('/login');
                     if (role === 'admin') navigate('/admin');
                     else if (role === 'professor') navigate('/professor');
                     else navigate('/student');

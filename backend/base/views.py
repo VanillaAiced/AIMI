@@ -243,6 +243,16 @@ def clear_data_view(request):
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+def me_view(request):
+	"""Return current authenticated user info including authoritative role."""
+	user = request.user
+	role = getattr(getattr(user, 'profile', None), 'role', None)
+	return Response({'username': user.username, 'id': user.id, 'role': role})
+
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def model_view(request, model):
 	"""Return JSON list for a given model name.
 

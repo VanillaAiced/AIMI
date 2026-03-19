@@ -29,10 +29,9 @@ const LoginScreen = ({ setUser }) => {
         if (json.access) localStorage.setItem('accessToken', json.access);
         if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
 
-        // use authoritative role from server response when available
-        const serverRole = json.role || null;
-        const stored = (()=>{ try{ return JSON.parse(localStorage.getItem('user')||'null'); }catch(e){return null;} })();
-        const user = { email, name: json.username, role: serverRole || (stored && stored.role) || 'student' };
+        // use authoritative role from server response only
+        const serverRole = json.role;
+        const user = { email, name: json.username, role: serverRole };
         localStorage.setItem('user', JSON.stringify(user));
         if (setUser) setUser(user);
 

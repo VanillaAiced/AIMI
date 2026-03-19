@@ -7,7 +7,9 @@ const ProtectedRoute = ({ role, children }) => {
     const raw = localStorage.getItem('user');
     if (!raw) return <Navigate to="/login" replace />;
     const user = JSON.parse(raw);
-    const userRole = user.role || 'student';
+    // Expect authoritative role to be provided by the server and persisted to localStorage
+    const userRole = user.role;
+    if (!userRole) return <Navigate to="/login" replace />;
     if (role && userRole !== role) return <Navigate to="/" replace />;
     return children;
   } catch (e) {

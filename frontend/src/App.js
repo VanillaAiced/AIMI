@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import NotificationProvider from './components/NotificationProvider';
 import Footer from './components/Footer';
@@ -29,6 +29,51 @@ import SetupProgress from './components/SetupProgress';
 
 function App() {
   const [user, setUser] = useState(null);
+
+  // Component rendered inside NotificationProvider so it can use the notification hook.
+  const AuthBootstrap = ({ setUser }) => {
+    const navigate = useNavigate();
+    const { notify } = require('./components/NotificationProvider').useNotification ? require('./components/NotificationProvider') : { notify: ()=>{} };
+    // Using a try/catch require above keeps the file parsable even if import style differs.
+
+    React.useEffect(() => {
+      (async () => {
+        try {
+          const token = localStorage.getItem('accessToken');
+          if (!token) return;
+          const resp = await fetch('/api/auth/me/', {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          });
+          if (!resp.ok) {
+            // token invalid -> clear and redirect to login
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            navigate('/login');
+            return;
+          }
+          const json = await resp.json();
+          // require authoritative role
+          if (!json.role) {
+            // missing role: force re-login with a clear message
+            try { if (notify) notify({ text: 'Account role missing — please sign in again.', variant: 'warning' }); } catch(e){}
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            navigate('/login');
+            return;
+          }
+          const newUser = { email: json.username, name: json.username, role: json.role };
+          localStorage.setItem('user', JSON.stringify(newUser));
+          setUser(newUser);
+        } catch (err) {
+          // network or other error — do nothing silently
+        }
+      })();
+    }, [setUser, navigate]);
+
+    return null;
+  };
 
   useEffect(() => {
     try {

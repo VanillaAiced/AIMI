@@ -29,8 +29,8 @@ const RegisterScreen = ({ setUser }) => {
       // store tokens and set user
       if (json.access) localStorage.setItem('accessToken', json.access);
       if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
-      // server returns authoritative role; fall back to selected role
-      const serverRole = json.role || role;
+      // use authoritative role returned by server
+      const serverRole = json.role;
       const user = { email, name: json.username, role: serverRole };
       localStorage.setItem('user', JSON.stringify(user));
       if (setUser) setUser(user);
