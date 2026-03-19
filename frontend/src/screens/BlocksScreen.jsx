@@ -13,17 +13,20 @@ const BlocksScreen = ()=>{
   useEffect(()=>{
     (async ()=>{
       try{
-        const r = await fetch('/api/blocks/');
+        const token = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const r = await fetch('/api/blocks/', { headers });
         if(!r.ok) return; const j = await r.json(); const data = Array.isArray(j)?j:(j.results||j); setList(data);
       }catch(e){}
     })();
 
     (async ()=>{
-      try{ const r = await fetch('/api/departments/'); if(!r.ok) return; const j=await r.json(); const d=Array.isArray(j)?j:(j.results||j); setDepartments(d); }catch(e){}
+      try{ const token = localStorage.getItem('accessToken'); const headers = { 'Content-Type': 'application/json' }; if (token) headers['Authorization'] = `Bearer ${token}`; const r = await fetch('/api/departments/', { headers }); if(!r.ok) return; const j=await r.json(); const d=Array.isArray(j)?j:(j.results||j); setDepartments(d); }catch(e){}
     })();
 
     (async ()=>{
-      try{ const r = await fetch('/api/subdepartments/'); if(!r.ok) return; const j=await r.json(); const d=Array.isArray(j)?j:(j.results||j); setSubdepartments(d); }catch(e){}
+      try{ const token = localStorage.getItem('accessToken'); const headers = { 'Content-Type': 'application/json' }; if (token) headers['Authorization'] = `Bearer ${token}`; const r = await fetch('/api/subdepartments/', { headers }); if(!r.ok) return; const j=await r.json(); const d=Array.isArray(j)?j:(j.results||j); setSubdepartments(d); }catch(e){}
     })();
   },[]);
 
@@ -31,8 +34,8 @@ const BlocksScreen = ()=>{
     if(deptId){ const first = subdepartments.find(s=> String(s.department)===String(deptId)); if(first) setSubdeptId(first.id); }
   },[deptId, subdepartments]);
 
-  const add = async (e)=>{ e.preventDefault(); const resp = await fetch('/api/blocks/',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({code, sub_department: subdeptId, year})}); if(resp.ok){ const j=await resp.json(); setList(s=>[...s,j]); setCode(''); } };
-  const remove = async (id)=>{ if(!window.confirm('Delete block?')) return; const r = await fetch(`/api/blocks/${id}/`,{method:'DELETE'}); if(r.ok) setList(s=>s.filter(b=>b.id!==id)); };
+  const add = async (e)=>{ e.preventDefault(); const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const resp = await fetch('/api/blocks/',{method:'POST', headers, body: JSON.stringify({code, sub_department: subdeptId, year})}); if(resp.ok){ const j=await resp.json(); setList(s=>[...s,j]); setCode(''); } };
+  const remove = async (id)=>{ if(!window.confirm('Delete block?')) return; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const r = await fetch(`/api/blocks/${id}/`,{method:'DELETE', headers}); if(r.ok) setList(s=>s.filter(b=>b.id!==id)); };
 
   return (
     <div>

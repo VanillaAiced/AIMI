@@ -16,7 +16,10 @@ const SubDepartmentsScreen = ()=>{
   useEffect(()=>{
     (async ()=>{
       try{
-        const resp = await fetch('/api/subdepartments/');
+        const token = localStorage.getItem('accessToken');
+        const headers = {'Content-Type':'application/json'};
+        if(token) headers['Authorization'] = `Bearer ${token}`;
+        const resp = await fetch('/api/subdepartments/', { headers });
         if(!resp.ok) return;
         const json = await resp.json();
         const data = Array.isArray(json) ? json : (json.results || json);
@@ -25,7 +28,10 @@ const SubDepartmentsScreen = ()=>{
     })();
     (async ()=>{
       try{
-        const r = await fetch('/api/departments/');
+        const token = localStorage.getItem('accessToken');
+        const headers = {'Content-Type':'application/json'};
+        if(token) headers['Authorization'] = `Bearer ${token}`;
+        const r = await fetch('/api/departments/', { headers });
         if(!r.ok) return;
         const j = await r.json();
         const d = Array.isArray(j)?j:(j.results||j);
@@ -39,11 +45,14 @@ const SubDepartmentsScreen = ()=>{
     if(!name) return;
     const dept = deptFilter || (departments[0] && departments[0].id);
     if(!dept) return;
-    const resp = await fetch('/api/subdepartments/', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, department: dept})});
+    const token = localStorage.getItem('accessToken');
+    const headers = {'Content-Type':'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    const resp = await fetch('/api/subdepartments/', { method: 'POST', headers, body: JSON.stringify({name, department: dept})});
     if(resp.ok){ const j = await resp.json(); setList(s=>[...s,j]); setName(''); }
   };
 
-  const remove = async (id)=>{ if(!window.confirm('Delete sub-department?')) return; const resp=await fetch(`/api/subdepartments/${id}/`,{method:'DELETE'}); if(resp.ok) setList(s=>s.filter(x=>x.id!==id)); };
+  const remove = async (id)=>{ if(!window.confirm('Delete sub-department?')) return; const token = localStorage.getItem('accessToken'); const headers={'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const resp=await fetch(`/api/subdepartments/${id}/`,{method:'DELETE', headers}); if(resp.ok) setList(s=>s.filter(x=>x.id!==id)); };
 
   return (
     <div>

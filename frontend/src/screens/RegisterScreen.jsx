@@ -19,7 +19,7 @@ const RegisterScreen = ({ setUser }) => {
   const [subDepartment, setSubDepartment] = useState('');
   const [yearLevel, setYearLevel] = useState('1');
   const [blockCode, setBlockCode] = useState('');
-  const maxUnits = 28;
+  
   const navigate = useNavigate();
   const { notify } = useNotification();
 
@@ -40,12 +40,11 @@ const RegisterScreen = ({ setUser }) => {
     }
     try {
       const payload = { name, username: username || email, email, password, role };
-      if (role === 'student') {
+        if (role === 'student') {
         payload.department = department;
         payload.sub_department = subDepartment;
         payload.year = yearLevel;
         payload.block = blockCode;
-        payload.max_units = maxUnits;
       } else if (role === 'professor') {
         payload.department = department;
         payload.sub_department = subDepartment;
@@ -141,7 +140,6 @@ const RegisterScreen = ({ setUser }) => {
                 <Form.Select value={role} onChange={(e)=>setRole(e.target.value)}>
                   <option value="student">Student</option>
                   <option value="professor">Professor</option>
-                  <option value="admin">Admin</option>
                 </Form.Select>
             </Form.Group>
 
@@ -177,10 +175,7 @@ const RegisterScreen = ({ setUser }) => {
                       {blocks.map(b=> <option key={b.id} value={b.code}>{b.code}</option>)}
                     </Form.Select>
                   </Form.Group>
-                  <Form.Group className="my-2">
-                    <Form.Label>Max Units</Form.Label>
-                    <Form.Control readOnly value={maxUnits} />
-                  </Form.Group>
+                  {/* Max Units is not required on signup; removed per UX change */}
                 </>
               )}
 

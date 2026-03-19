@@ -16,12 +16,17 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class SubDepartmentSerializer(serializers.ModelSerializer):
+    # expose department name for convenience in API responses
+    department_name = serializers.CharField(source='department.name', read_only=True)
     class Meta:
         model = models.SubDepartment
         fields = '__all__'
 
 
 class BlockSerializer(serializers.ModelSerializer):
+    # helpful display fields
+    sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
+    department_name = serializers.CharField(source='sub_department.department.name', read_only=True)
     class Meta:
         model = models.Block
         fields = '__all__'

@@ -5,10 +5,13 @@ const CoursesScreen = () => {
   const [list, setList] = useState([]);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  useEffect(()=>{ fetch('/api/courses/').then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); },[]);
+  useEffect(()=>{ (async ()=>{ const token = localStorage.getItem('accessToken'); const headers={'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; fetch('/api/courses/',{ headers }).then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); })(); },[]);
   const add = async (e) => {
     e.preventDefault();
-    const resp = await fetch('/api/courses/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, name }) });
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const resp = await fetch('/api/courses/', { method: 'POST', headers, body: JSON.stringify({ code, name }) });
     if (resp.ok) {
       const data = await resp.json();
       setList((l) => [...l, data]);

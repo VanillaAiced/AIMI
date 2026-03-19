@@ -55,11 +55,12 @@ function App() {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           });
           if (!resp.ok) {
-            // token invalid -> clear and redirect to login
+            // token invalid -> clear stored auth but do not force a navigation
+            // (navigating here causes reload-to-login race on protected pages)
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
-            navigate('/login');
+            if (notify) notify({ text: 'Session expired — please sign in again.', variant: 'warning' });
             return;
           }
           const json = await resp.json();

@@ -79,9 +79,14 @@ const LoginScreen = ({ setUser }) => {
               />
             </Form.Group>
 
-            <Button type="submit" variant="primary" className="mt-3">
-              Sign In
-            </Button>
+            <div className="d-flex gap-2 mt-3">
+              <Button type="submit" variant="primary">
+                Sign In
+              </Button>
+              <Button variant="outline-secondary" onClick={() => navigate('/register')}>
+                Sign Up
+              </Button>
+            </div>
           </Form>
         </Card>
       </Col>

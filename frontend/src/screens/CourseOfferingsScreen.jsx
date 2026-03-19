@@ -5,12 +5,15 @@ const CourseOfferingsScreen = ()=>{
   const [list,setList]=useState([]);
   const [course,setCourse]=useState('');
   const [block,setBlock]=useState('');
-  useEffect(()=>{ fetch('/api/course-offerings/').then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); },[]);
+  useEffect(()=>{ (async ()=>{ const token = localStorage.getItem('accessToken'); const headers={'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; fetch('/api/course-offerings/',{ headers }).then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); })(); },[]);
   const add=async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const resp = await fetch('/api/course-offerings/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ course: { code: course, name: course }, assigned_block: { code: block } }),
     });
     if (resp.ok) {

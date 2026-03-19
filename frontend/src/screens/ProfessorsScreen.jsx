@@ -4,10 +4,13 @@ import { Table, Button, Form } from 'react-bootstrap';
 const ProfessorsScreen = ()=>{
   const [list,setList]=useState([]);
   const [name,setName]=useState('');
-  useEffect(()=>{ fetch('/api/professors/').then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); },[]);
+  useEffect(()=>{ (async ()=>{ const token = localStorage.getItem('accessToken'); const headers={'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; fetch('/api/professors/',{ headers }).then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); })(); },[]);
   const add = async (e) => {
     e.preventDefault();
-    const resp = await fetch('/api/professors/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const resp = await fetch('/api/professors/', { method: 'POST', headers, body: JSON.stringify({ name }) });
     if (resp.ok) {
       const data = await resp.json();
       setList((l) => [...l, data]);

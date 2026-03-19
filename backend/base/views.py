@@ -151,9 +151,10 @@ def signup_view(request):
 		pass
 	# optionally set role on Profile if provided
 	role = payload.get('role')
+	# Only allow non-admin role assignment from self-service signup
 	try:
 		profile = getattr(user, 'profile', None)
-		if profile and role in ('admin', 'professor', 'student'):
+		if profile and role in ('professor', 'student'):
 			profile.role = role
 			profile.save()
 	except Exception:

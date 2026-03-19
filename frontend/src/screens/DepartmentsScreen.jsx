@@ -9,7 +9,10 @@ const DepartmentsScreen = () => {
   useEffect(()=>{
     (async ()=>{
       try{
-        const resp = await fetch('/api/departments/');
+        const token = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const resp = await fetch('/api/departments/', { headers });
         if(!resp.ok) return;
         const json = await resp.json();
         const data = Array.isArray(json) ? json : (json.results || json);
@@ -22,7 +25,10 @@ const DepartmentsScreen = () => {
 
   const add = async (e)=>{
     e.preventDefault();
-    const resp = await fetch('/api/departments/', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name})});
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const resp = await fetch('/api/departments/', { method: 'POST', headers, body: JSON.stringify({name})});
     if (resp.ok) {
       const j = await resp.json();
       setList((s)=>[...s,j]);
@@ -32,7 +38,10 @@ const DepartmentsScreen = () => {
 
   const remove = async (id)=>{
     if (!window.confirm('Delete this department?')) return;
-    const resp = await fetch(`/api/departments/${id}/`, { method: 'DELETE' });
+    const token = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const resp = await fetch(`/api/departments/${id}/`, { method: 'DELETE', headers });
     if (resp.ok) setList((s)=>s.filter(d=>d.id!==id));
   };
 
