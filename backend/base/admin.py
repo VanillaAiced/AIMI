@@ -32,7 +32,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(SubDepartment)
 class SubDepartmentAdmin(admin.ModelAdmin):
-	list_display = ('name', 'department')
+	list_display = ('name', 'department', 'number')
 	search_fields = ('name',)
 
 

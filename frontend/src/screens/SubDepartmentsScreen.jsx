@@ -21,6 +21,7 @@ const SubDepartmentsScreen = ()=>{
   const [editingBlock, setEditingBlock] = useState(null);
   const [editBlockCode, setEditBlockCode] = useState('');
   const [editBlockYear, setEditBlockYear] = useState(2);
+  const [editBlockNumber, setEditBlockNumber] = useState('1');
   const query = useQuery();
   const deptFilter = query.get('dept');
   const navigate = useNavigate();
@@ -160,21 +161,22 @@ const SubDepartmentsScreen = ()=>{
             </Row>
           </Form>
           <Table striped>
-            <thead><tr><th>Code</th><th>Year</th><th></th></tr></thead>
+            <thead><tr><th>Code</th><th>Year</th><th>Number</th><th></th></tr></thead>
             <tbody>{blocks.map(b=> (
-              <tr key={b.id}><td>{b.code}</td><td>{b.year}</td><td>
-                <Button size="sm" variant="outline-primary" onClick={()=>{ setEditingBlock(b); setEditBlockCode(b.code||''); setEditBlockYear(b.year||2); }} style={{marginRight:6}}>Edit</Button>
+              <tr key={b.id}><td>{b.code}</td><td>{b.year}</td><td>{(b.code && b.code.length>2) ? b.code.slice(2) : ''}</td><td>
+                <Button size="sm" variant="outline-primary" onClick={()=>{ setEditingBlock(b); setEditBlockCode(b.code||''); setEditBlockYear(b.year||2); setEditBlockNumber((b.code && b.code.length>2)? b.code.slice(2) : ''); }} style={{marginRight:6}}>Edit</Button>
                 <Button size="sm" variant="danger" onClick={async ()=>{ if(!window.confirm('Delete block?')) return; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const r = await fetch(`/api/blocks/${b.id}/`, { method:'DELETE', headers }); if(r.ok){ setBlocks(bs=>bs.filter(x=>x.id!==b.id)); setBlockCounts(prev=>({...prev, [managingSub.id]: Math.max(0,(prev[managingSub.id]||0)-1)})); } }}>Delete</Button>
               </td></tr>
             ))}</tbody>
           </Table>
           {/* Edit block modal */}
-          <Modal show={!!editingBlock} onHide={()=>{ setEditingBlock(null); setEditBlockCode(''); setEditBlockYear(2); }} centered>
+          <Modal show={!!editingBlock} onHide={()=>{ setEditingBlock(null); setEditBlockCode(''); setEditBlockYear(2); setEditBlockNumber('1'); }} centered backdrop={false}>
             <Modal.Header closeButton><Modal.Title>Edit Block</Modal.Title></Modal.Header>
             <Modal.Body>
-              <Form onSubmit={async (e)=>{ e.preventDefault(); if(!editingBlock) return; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization'] = `Bearer ${token}`; const payload = { code: editBlockCode, year: editBlockYear, sub_department: managingSub.id }; const resp = await fetch(`/api/blocks/${editingBlock.id}/`, { method: 'PATCH', headers, body: JSON.stringify(payload) }); if(resp.ok){ const j = await resp.json(); setBlocks(bs=>bs.map(x=> x.id===j.id?j:x)); setEditingBlock(null); setEditBlockCode(''); setEditBlockYear(2); } }}>
+              <Form onSubmit={async (e)=>{ e.preventDefault(); if(!editingBlock) return; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization'] = `Bearer ${token}`; const newCode = `${editBlockYear}0${editBlockNumber}`; const payload = { code: newCode, year: editBlockYear, sub_department: managingSub.id }; const resp = await fetch(`/api/blocks/${editingBlock.id}/`, { method: 'PATCH', headers, body: JSON.stringify(payload) }); if(resp.ok){ const j = await resp.json(); setBlocks(bs=>bs.map(x=> x.id===j.id?j:x)); setEditingBlock(null); setEditBlockCode(''); setEditBlockYear(2); setEditBlockNumber('1'); } }}>
                 <Form.Group className="mb-2"><Form.Label>Code</Form.Label><Form.Control value={editBlockCode} onChange={e=>setEditBlockCode(e.target.value)} required /></Form.Group>
                 <Form.Group className="mb-2"><Form.Label>Year</Form.Label><Form.Control type="number" value={editBlockYear} min={1} onChange={e=>setEditBlockYear(parseInt(e.target.value)||1)} required /></Form.Group>
+                <Form.Group className="mb-2"><Form.Label>Number</Form.Label><Form.Control value={editBlockNumber} onChange={e=>setEditBlockNumber(e.target.value)} required /></Form.Group>
                 <div className="d-flex justify-content-end"><Button type="submit">Save</Button></div>
               </Form>
             </Modal.Body>

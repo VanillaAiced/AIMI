@@ -28,6 +28,8 @@ class Department(models.Model):
 class SubDepartment(models.Model):
 	name = models.CharField(max_length=200)
 	department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='subdepartments')
+	# optional numeric identifier / code for the sub-department
+	number = models.CharField(max_length=50, null=True, blank=True)
 
 	class Meta:
 		unique_together = ('name', 'department')
