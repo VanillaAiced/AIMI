@@ -50,7 +50,12 @@ const Header = ({ user, setUser }) => {
               </LinkContainer>
               {user ? (
                 <>
-                  <Nav.Link onClick={()=>navigate('/data-input')}>
+                  <Nav.Link onClick={()=>{
+                    const role = (user && user.role) || JSON.parse(localStorage.getItem('user') || '{}').role || 'student';
+                    if (role === 'admin') navigate('/admin');
+                    else if (role === 'professor') navigate('/professor');
+                    else navigate('/student');
+                  }}>
                     <i className="fas fa-user"></i> {user.email}
                   </Nav.Link>
                   <Nav.Link onClick={handleLogout}>

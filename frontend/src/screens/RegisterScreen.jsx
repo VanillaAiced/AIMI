@@ -3,9 +3,10 @@ import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
 
-const RegisterScreen = () => {
+const RegisterScreen = ({ setUser }) => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [role, setRole] = useState('student');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const RegisterScreen = () => {
       const resp = await fetch('/api/auth/signup/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username || email, email, password }),
+        body: JSON.stringify({ username: username || email, email, password, role }),
       });
       if (!resp.ok) {
         const text = await resp.text();
@@ -29,7 +30,10 @@ const RegisterScreen = () => {
       if (json.access) localStorage.setItem('accessToken', json.access);
       if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
       const user = { email, name: json.username };
+      // persist role locally for client-side routing
+      user.role = role;
       localStorage.setItem('user', JSON.stringify(user));
+      if (setUser) setUser(user);
       if (setTimeout) notify({ text: 'Signup successful — signed in as ' + json.username, variant: 'success' });
       setTimeout(() => navigate('/data-input'), 700);
     } catch (err) {
@@ -43,6 +47,14 @@ const RegisterScreen = () => {
         <Card className="p-3">
           <h2>Register</h2>
           <Form onSubmit={submitHandler}>
+            <Form.Group className="my-2">
+              <Form.Label>User Type</Form.Label>
+              <Form.Select value={role} onChange={(e)=>setRole(e.target.value)}>
+                <option value="student">Student</option>
+                <option value="professor">Professor</option>
+                <option value="admin">Admin</option>
+              </Form.Select>
+            </Form.Group>
             <Form.Group controlId="email" className="my-2">
               <Form.Label>Email address</Form.Label>
               <Form.Control

@@ -11,6 +11,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth import get_user_model
 
 
 # Simple health endpoint for frontend integration testing
@@ -139,9 +140,20 @@ def signup_view(request):
 		return Response({'status': 'error', 'message': 'username taken'}, status=status.HTTP_400_BAD_REQUEST)
 
 	user = User.objects.create_user(username=username, email=email, password=password)
+	# optionally set role on Profile if provided
+	role = payload.get('role')
+	try:
+		profile = getattr(user, 'profile', None)
+		if profile and role in ('admin', 'professor', 'student'):
+			profile.role = role
+			profile.save()
+	except Exception:
+		# don't block signup if profile handling fails
+		pass
+
 	# create JWT tokens
 	refresh = RefreshToken.for_user(user)
-	return Response({'status': 'created', 'username': user.username, 'id': user.id, 'access': str(refresh.access_token), 'refresh': str(refresh)})
+	return Response({'status': 'created', 'username': user.username, 'id': user.id, 'access': str(refresh.access_token), 'refresh': str(refresh), 'role': getattr(user.profile, 'role', 'student')})
 
 
 @api_view(['POST'])
@@ -171,9 +183,10 @@ def login_view(request):
 		else:
 			return Response({'status': 'error', 'message': 'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-	# return JWT tokens
+	# return JWT tokens and role
 	refresh = RefreshToken.for_user(user)
-	return Response({'status': 'ok', 'username': user.username, 'id': user.id, 'created': created_flag, 'access': str(refresh.access_token), 'refresh': str(refresh)})
+	role = getattr(getattr(user, 'profile', None), 'role', 'student')
+	return Response({'status': 'ok', 'username': user.username, 'id': user.id, 'created': created_flag, 'access': str(refresh.access_token), 'refresh': str(refresh), 'role': role})
 
 
 @api_view(['POST'])

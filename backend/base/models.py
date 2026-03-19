@@ -1,4 +1,8 @@
 from django.db import models
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 # School / Admin level
@@ -203,3 +207,24 @@ class ScheduleEntry(models.Model):
 # These keep older imports (Subject, Section) working while frontend/api is migrated.
 Subject = Course
 Section = Block
+
+
+# Simple user profile to store authoritative role information server-side
+class Profile(models.Model):
+	ROLE_CHOICES = [
+		('admin', 'Admin'),
+		('professor', 'Professor'),
+		('student', 'Student'),
+	]
+	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+	role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+
+	def __str__(self):
+		return f"{self.user.username} ({self.role})"
+
+
+# Ensure a Profile exists for each new user
+@receiver(post_save, sender=get_user_model())
+def create_user_profile(sender, instance, created, **kwargs):
+	if created:
+		Profile.objects.create(user=instance)
