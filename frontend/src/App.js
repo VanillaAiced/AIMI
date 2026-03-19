@@ -2,7 +2,7 @@ import React from 'react';
 import { Container } from 'react-bootstrap';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
-import NotificationProvider from './components/NotificationProvider';
+import NotificationProvider, { useNotification } from './components/NotificationProvider';
 import Footer from './components/Footer';
 import HomeScreen from './screens/HomeScreen';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,9 @@ import AIAnalysisScreen from './screens/AIAnalysisScreen';
 import ExportScreen from './screens/ExportScreen';
 import AdminDashboard from './screens/AdminDashboard';
 import DepartmentsScreen from './screens/DepartmentsScreen';
+import SubDepartmentsScreen from './screens/SubDepartmentsScreen';
+import BlocksScreen from './screens/BlocksScreen';
+import ReauthScreen from './screens/ReauthScreen';
 import BuildingsScreen from './screens/BuildingsScreen';
 import TimeSlotsScreen from './screens/TimeSlotsScreen';
 import AdminResources from './screens/AdminResources';
@@ -33,8 +36,7 @@ function App() {
   // Component rendered inside NotificationProvider so it can use the notification hook.
   const AuthBootstrap = ({ setUser }) => {
     const navigate = useNavigate();
-    const { notify } = require('./components/NotificationProvider').useNotification ? require('./components/NotificationProvider') : { notify: ()=>{} };
-    // Using a try/catch require above keeps the file parsable even if import style differs.
+    const { notify } = useNotification();
 
     React.useEffect(() => {
       (async () => {
@@ -55,12 +57,10 @@ function App() {
           const json = await resp.json();
           // require authoritative role
           if (!json.role) {
-            // missing role: force re-login with a clear message
-            try { if (notify) notify({ text: 'Account role missing — please sign in again.', variant: 'warning' }); } catch(e){}
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            // missing role: show re-authentication screen with message
+            if (notify) notify({ text: 'Account role missing — please re-authenticate.', variant: 'warning' });
             localStorage.removeItem('user');
-            navigate('/login');
+            navigate('/reauth');
             return;
           }
           const newUser = { email: json.username, name: json.username, role: json.role };
@@ -70,7 +70,7 @@ function App() {
           // network or other error — do nothing silently
         }
       })();
-    }, [setUser, navigate]);
+    }, [setUser, navigate, notify]);
 
     return null;
   };
@@ -93,6 +93,7 @@ function App() {
     <Router>
       <NotificationProvider>
         <Header user={user} setUser={setUser} />
+        <AuthBootstrap setUser={setUser} />
         <main className="py-3">
           <Container fluid style={{ padding: 0 }}>
             <Routes>
@@ -100,8 +101,11 @@ function App() {
               <Route path="/login" element={<LoginScreen setUser={setUser} />} />
               <Route path="/register" element={<RegisterScreen setUser={setUser} />} />
               <Route path="/data-input" element={<DataInputScreen />} />
+              
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/departments" element={<ProtectedRoute role="admin"><DepartmentsScreen/></ProtectedRoute>} />
+                <Route path="/admin/subdepartments" element={<ProtectedRoute role="admin"><SubDepartmentsScreen/></ProtectedRoute>} />
+                <Route path="/admin/blocks" element={<ProtectedRoute role="admin"><BlocksScreen/></ProtectedRoute>} />
                 <Route path="/admin/buildings" element={<ProtectedRoute role="admin"><BuildingsScreen/></ProtectedRoute>} />
                 <Route path="/admin/timeslots" element={<ProtectedRoute role="admin"><TimeSlotsScreen/></ProtectedRoute>} />
                 <Route path="/admin/resources" element={<ProtectedRoute role="admin"><AdminResources/></ProtectedRoute>} />
@@ -111,6 +115,7 @@ function App() {
                 <Route path="/student" element={<StudentDashboard />} />
                 <Route path="/professor" element={<ProfessorDashboard />} />
               <Route path="/schedule-generation" element={<ScheduleGenerationScreen />} />
+              <Route path="/reauth" element={<ReauthScreen />} />
               <Route path="/payment" element={<PaymentScreen />} />
               <Route path="/schedule-preview" element={<SchedulePreviewScreen />} />
               <Route path="/ai-analysis" element={<AIAnalysisScreen />} />
