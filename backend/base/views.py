@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseBadRequest
-from .models import Subject, Professor, Room, Section
+from .models import Course, Professor, Room, Block, Department, SubDepartment, RoomType
 import json
 from django.contrib.auth import authenticate, logout
 from django.contrib.auth.models import User
@@ -29,10 +29,10 @@ def data_view(request):
 	if request.method == 'GET':
 		# return only items created by this user
 		username = request.user.username
-		subjects = list(Subject.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
+		subjects = list(Course.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
 		professors = list(Professor.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
 		rooms = list(Room.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
-		sections = list(Section.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
+		sections = list(Block.objects.filter(owner_session=username).order_by('-created_at')[:50].values())
 		return JsonResponse({'subjects': subjects, 'professors': professors, 'rooms': rooms, 'sections': sections})
 
 	# POST: parse JSON
@@ -51,19 +51,19 @@ def data_view(request):
 	# identify owner by username (JWT-authenticated user)
 	owner = request.user.username
 
-	# Subjects: use code as unique identifier
+	# Subjects -> Course: use code as unique identifier
 	for s in payload.get('subjects', []):
 		code = s.get('code')
 		if not code:
 			continue
+		hours = int(s.get('hours') or 0)
 		defaults = {
 			'name': s.get('name', ''),
-			'block': s.get('block', ''),
 			'units': int(s.get('units') or 0),
-			'hours': int(s.get('hours') or 0),
+			'duration_minutes': hours * 60,
 			'owner_session': owner,
 		}
-		obj, created_flag = Subject.objects.update_or_create(code=code, defaults=defaults)
+		obj, created_flag = Course.objects.update_or_create(code=code, defaults=defaults)
 		if created_flag:
 			created['subjects'] += 1
 
@@ -72,34 +72,49 @@ def data_view(request):
 		name = p.get('name')
 		if not name:
 			continue
-		defaults = {'availability': p.get('availability', ''), 'owner_session': owner}
+		defaults = {
+			'availability': p.get('availability', ''),
+			'owner_session': owner,
+		}
 		obj, created_flag = Professor.objects.update_or_create(name=name, defaults=defaults)
 		if created_flag:
 			created['professors'] += 1
 
-	# Rooms: unique by name
+	# Rooms: unique by name (legacy) — map room.type to RoomType
 	for r in payload.get('rooms', []):
 		name = r.get('name')
 		if not name:
 			continue
+		cap = int(r.get('capacity') or 0)
+		type_key = (r.get('type') or r.get('room_type') or '').upper()
+		room_type_obj = None
+		if type_key:
+			room_type_obj, _ = RoomType.objects.get_or_create(name=type_key)
+
 		defaults = {
-			'capacity': int(r.get('capacity') or 0),
-			'room_type': r.get('type') or r.get('room_type') or 'LECTURE',
+			'capacity': cap,
+			'room_type': room_type_obj,
 			'owner_session': owner,
+			'name': name,
 		}
 		obj, created_flag = Room.objects.update_or_create(name=name, defaults=defaults)
 		if created_flag:
 			created['rooms'] += 1
 
-	# Sections: unique by name+department+year
+	# Sections -> Block: create Department/SubDepartment/Block as needed
 	for sec in payload.get('sections', []):
 		name = sec.get('name')
-		department = sec.get('department')
+		department_name = sec.get('department')
 		year = sec.get('yearLevel') or sec.get('year_level')
-		if not name or not department or not year:
+		if not name or not department_name or not year:
 			continue
-		defaults = {'year_level': int(year), 'owner_session': owner}
-		obj, created_flag = Section.objects.update_or_create(name=name, department=department, year_level=int(year), defaults=defaults)
+
+		# find or create Department (school optional)
+		dept_obj, _ = Department.objects.get_or_create(name=department_name)
+		subdept_obj, _ = SubDepartment.objects.get_or_create(name=department_name, department=dept_obj)
+
+		defaults = {'year': int(year), 'owner_session': owner}
+		obj, created_flag = Block.objects.update_or_create(code=name, sub_department=subdept_obj, defaults=defaults)
 		if created_flag:
 			created['sections'] += 1
 
@@ -168,10 +183,10 @@ def logout_view(request):
 	# Delete only data owned by this authenticated user
 	owner = request.user.username
 
-	subj_qs = Subject.objects.filter(owner_session=owner)
+	subj_qs = Course.objects.filter(owner_session=owner)
 	prof_qs = Professor.objects.filter(owner_session=owner)
 	room_qs = Room.objects.filter(owner_session=owner)
-	section_qs = Section.objects.filter(owner_session=owner)
+	section_qs = Block.objects.filter(owner_session=owner)
 
 	subj_count = subj_qs.count()
 	prof_count = prof_qs.count()
@@ -194,10 +209,10 @@ def clear_data_view(request):
 	"""Clear only the authenticated user's schedule-related data without logging them out."""
 	owner = request.user.username
 
-	subj_qs = Subject.objects.filter(owner_session=owner)
+	subj_qs = Course.objects.filter(owner_session=owner)
 	prof_qs = Professor.objects.filter(owner_session=owner)
 	room_qs = Room.objects.filter(owner_session=owner)
-	section_qs = Section.objects.filter(owner_session=owner)
+	section_qs = Block.objects.filter(owner_session=owner)
 
 	subj_count = subj_qs.count()
 	prof_count = prof_qs.count()
@@ -233,14 +248,14 @@ def model_view(request, model):
 
 	key = (model or '').strip().lower()
 	mapping = {
-		'subject': Subject,
-		'subjects': Subject,
+		'subject': Course,
+		'subjects': Course,
 		'professor': Professor,
 		'professors': Professor,
 		'room': Room,
 		'rooms': Room,
-		'section': Section,
-		'sections': Section,
+		'section': Block,
+		'sections': Block,
 	}
 
 	Model = mapping.get(key)

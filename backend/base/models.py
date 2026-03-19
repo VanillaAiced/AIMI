@@ -1,14 +1,120 @@
 from django.db import models
 
 
-# Proper typed models for schedule data
-class Subject(models.Model):
+# School / Admin level
+class School(models.Model):
+	name = models.CharField(max_length=255, unique=True)
+
+	def __str__(self):
+		return self.name
+
+
+class Department(models.Model):
 	name = models.CharField(max_length=200)
+	# allow school to be optional to simplify migrations from legacy flat data
+	school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='departments', null=True, blank=True)
+
+	class Meta:
+		unique_together = ('name', 'school')
+
+	def __str__(self):
+		return f"{self.name}"
+
+
+class SubDepartment(models.Model):
+	name = models.CharField(max_length=200)
+	department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='subdepartments')
+
+	class Meta:
+		unique_together = ('name', 'department')
+
+	def __str__(self):
+		return f"{self.name}"
+
+
+# Blocks (e.g. CPE-101)
+class Block(models.Model):
 	code = models.CharField(max_length=50, unique=True)
-	block = models.CharField(max_length=100, blank=True)
-	units = models.IntegerField()
-	hours = models.IntegerField()
-	# session identifier so we can associate data with a user's session
+	sub_department = models.ForeignKey(SubDepartment, on_delete=models.CASCADE, related_name='blocks')
+	year = models.IntegerField()
+	# compatibility fields
+	owner_session = models.CharField(max_length=100, blank=True, null=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return self.code
+
+
+# Buildings, Rooms and Room Types
+class Building(models.Model):
+	name = models.CharField(max_length=100, unique=True)
+
+	def __str__(self):
+		return self.name
+
+
+class RoomType(models.Model):
+	name = models.CharField(max_length=100, unique=True)
+
+	def __str__(self):
+		return self.name
+
+
+class Room(models.Model):
+	# allow existing rows without a building to avoid one-off migration defaults
+	building = models.ForeignKey(Building, on_delete=models.SET_NULL, null=True, blank=True, related_name='rooms')
+	# allow floor to be null for existing rows during migration
+	floor = models.IntegerField(null=True, blank=True)
+	number = models.CharField(max_length=20, null=True, blank=True)
+	# compatibility: keep legacy `name` used by frontend/imports
+	name = models.CharField(max_length=200, null=True, blank=True)
+	room_type = models.ForeignKey(RoomType, on_delete=models.SET_NULL, null=True, blank=True)
+	capacity = models.IntegerField(null=True, blank=True)
+	owner_session = models.CharField(max_length=100, blank=True, null=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		unique_together = ('building', 'floor', 'number')
+
+	def __str__(self):
+		return f"{self.building.name}-{self.floor}{self.number}"
+
+
+# Time slots
+class TimeSlot(models.Model):
+	DAY_CHOICES = [
+		('MONDAY', 'Monday'),
+		('TUESDAY', 'Tuesday'),
+		('WEDNESDAY', 'Wednesday'),
+		('THURSDAY', 'Thursday'),
+		('FRIDAY', 'Friday'),
+		('SATURDAY', 'Saturday'),
+		('SUNDAY', 'Sunday'),
+	]
+
+	day = models.CharField(max_length=20, choices=DAY_CHOICES)
+	start_time = models.TimeField()
+	end_time = models.TimeField()
+
+	class Meta:
+		unique_together = ('day', 'start_time', 'end_time')
+
+	def __str__(self):
+		return f"{self.get_day_display()} {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+
+
+# Courses and offerings
+class Course(models.Model):
+	name = models.CharField(max_length=255)
+	code = models.CharField(max_length=50, unique=True)
+	room_requirement = models.ForeignKey(RoomType, on_delete=models.SET_NULL, null=True, blank=True)
+	# If professor_requirement is null and `allow_any_professor` is True, then any professor can teach
+	professor_requirement = models.ForeignKey(SubDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+	allow_any_professor = models.BooleanField(default=False)
+	duration_minutes = models.IntegerField(help_text='Duration in minutes per session')
+	frequency_per_week = models.IntegerField(default=1)
+	units = models.IntegerField(default=0)
+	# compatibility fields
 	owner_session = models.CharField(max_length=100, blank=True, null=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
@@ -16,42 +122,84 @@ class Subject(models.Model):
 		return f"{self.code} - {self.name}"
 
 
-class Professor(models.Model):
-	name = models.CharField(max_length=200, unique=True)
-	availability = models.TextField(blank=True)
-	owner_session = models.CharField(max_length=100, blank=True, null=True)
-	created_at = models.DateTimeField(auto_now_add=True)
+class CourseOffering(models.Model):
+	name = models.CharField(max_length=255, blank=True)
+	course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='offerings')
+	assigned_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name='course_offerings')
+	assigned_professor = models.ForeignKey('Professor', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_offerings')
+
+	def save(self, *args, **kwargs):
+		if not self.name:
+			self.name = f"{self.course.code} - {self.assigned_block.code}"
+		super().save(*args, **kwargs)
 
 	def __str__(self):
 		return self.name
 
 
-class Room(models.Model):
-	ROOM_TYPES = [
-		('LECTURE', 'Lecture'),
-		('LAB', 'Lab'),
-		('CONFERENCE', 'Conference'),
-	]
-
-	name = models.CharField(max_length=200, unique=True)
-	capacity = models.IntegerField()
-	room_type = models.CharField(max_length=20, choices=ROOM_TYPES)
-	owner_session = models.CharField(max_length=100, blank=True, null=True)
-	created_at = models.DateTimeField(auto_now_add=True)
+# Curriculum and YearLevels
+class Curriculum(models.Model):
+	name = models.CharField(max_length=255)
+	sub_department = models.ForeignKey(SubDepartment, on_delete=models.CASCADE, related_name='curricula')
+	courses = models.ManyToManyField(Course, blank=True, related_name='curricula')
+	blocks = models.ManyToManyField(Block, blank=True, related_name='curricula')
 
 	def __str__(self):
 		return self.name
 
 
-class Section(models.Model):
+class YearLevel(models.Model):
 	name = models.CharField(max_length=200)
-	department = models.CharField(max_length=200)
-	year_level = models.IntegerField()
+	curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, related_name='year_levels')
+	blocks = models.ManyToManyField(Block, blank=True, related_name='year_levels')
+
+	def __str__(self):
+		return f"{self.curriculum.name} - {self.name}"
+
+
+# Professors
+class Professor(models.Model):
+	name = models.CharField(max_length=200)
+	availability = models.TextField(blank=True)
+	email = models.EmailField(blank=True, null=True)
+	department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='professors')
+	sub_department = models.ForeignKey(SubDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='professors')
+	max_units = models.IntegerField(default=21)
+	max_hours = models.IntegerField(null=True, blank=True)
 	owner_session = models.CharField(max_length=100, blank=True, null=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return self.name
+
+
+# Schedule entries (one per scheduled class session)
+class ScheduleEntry(models.Model):
+	course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, related_name='schedule_entries')
+	course = models.ForeignKey(Course, on_delete=models.CASCADE)
+	block = models.ForeignKey(Block, on_delete=models.CASCADE)
+	professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, blank=True)
+	room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True)
+	time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE)
+
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
-		unique_together = ('name', 'department', 'year_level')
+		unique_together = ('room', 'time_slot')
+
+	def save(self, *args, **kwargs):
+		# ensure course/block are consistent with offering
+		if not self.course_id:
+			self.course = self.course_offering.course
+		if not self.block_id:
+			self.block = self.course_offering.assigned_block
+		super().save(*args, **kwargs)
 
 	def __str__(self):
-		return f"{self.name} ({self.department} - Year {self.year_level})"
+		return f"{self.course_offering} @ {self.time_slot} in {self.room}"
+
+
+# Backwards-compatibility aliases for existing views/endpoints
+# These keep older imports (Subject, Section) working while frontend/api is migrated.
+Subject = Course
+Section = Block
