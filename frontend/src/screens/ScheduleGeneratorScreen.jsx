@@ -8,8 +8,8 @@ const ScheduleGeneratorScreen = ()=>{
   const [running,setRunning]=useState(false);
   const [ready, setReady] = useState(false);
   const onStatus = (counts) => {
-    // require at least one in each category
-    const ok = counts.courses>0 && counts.timeslots>0 && counts.buildings>0 && counts.offerings>0;
+    // require core data: courses, buildings, offerings, and at least one professor
+    const ok = counts.courses>0 && counts.buildings>0 && counts.offerings>0 && counts.professors>0;
     setReady(ok);
   };
   const run = async ()=>{
@@ -31,7 +31,7 @@ const ScheduleGeneratorScreen = ()=>{
       <SetupProgress onStatus={onStatus} />
       <div className="mt-3">
         <Button onClick={run} disabled={running || !ready}>{running? 'Running...':'Generate Schedule'}</Button>
-        {!ready && <div className="text-muted small mt-2">Generate disabled — please ensure Courses, TimeSlots, Buildings and Course Offerings exist.</div>}
+        {!ready && <div className="text-muted small mt-2">Generate disabled — please ensure Courses, Buildings, Professors, and Course Offerings exist.</div>}
       </div>
     </div>
   );

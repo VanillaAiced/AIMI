@@ -12,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from django.views.decorators.http import require_GET
 
 
 # Simple health endpoint for frontend integration testing
@@ -299,3 +300,30 @@ def model_view(request, model):
 
 	data = list(qs.values())
 	return JsonResponse({model: data})
+
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def admin_users_view(request):
+	"""Return list of users and their profile roles for admin dashboard.
+
+	Only accessible to admin users (is_staff or profile.role == 'admin').
+	"""
+	user = request.user
+	role = getattr(getattr(user, 'profile', None), 'role', None)
+	if not (getattr(user, 'is_staff', False) or role == 'admin'):
+		return Response({'detail': 'forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+	User = get_user_model()
+	users = []
+	for u in User.objects.order_by('username').all():
+		users.append({
+			'id': u.id,
+			'username': u.username,
+			'email': u.email,
+			'is_superuser': u.is_superuser,
+			'is_staff': u.is_staff,
+			'role': getattr(getattr(u, 'profile', None), 'role', None)
+		})
+	return Response({'users': users}, status=status.HTTP_200_OK)

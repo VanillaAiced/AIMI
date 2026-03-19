@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button } from 'react-bootstrap';
 
 const ScheduleViewer = ()=>{
-  const [view, setView] = useState('block');
+  const [, setView] = useState('block');
   const [entries, setEntries] = useState([]);
   useEffect(()=>{ fetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>setEntries(j)).catch(()=>{}); },[]);
   return (<div><h3>Schedule Viewer</h3>

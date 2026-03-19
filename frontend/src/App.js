@@ -26,7 +26,7 @@ import ScheduleViewer from './screens/ScheduleViewer';
 import StudentDashboard from './screens/StudentDashboard';
 import ProfessorDashboard from './screens/ProfessorDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import SetupProgress from './components/SetupProgress';
+// SetupProgress is used inside AdminDashboard; not imported here to avoid unused import
 
 // Module-level guard so the auth bootstrap runs only once across remounts/HMR
 let authBootstrapped = false;

@@ -26,6 +26,7 @@ urlpatterns = [
 	path('auth/login/', views.login_view, name='login'),
 	path('auth/me/', views.me_view, name='me'),
 	path('auth/logout/', views.logout_view, name='logout'),
+	path('admin/users/', views.admin_users_view, name='admin_users'),
 	path('auth/clear-data/', views.clear_data_view, name='clear_data'),
 	# Router-provided API for CRUD on new models
 	path('', include(router.urls)),

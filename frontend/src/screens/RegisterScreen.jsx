@@ -18,7 +18,7 @@ const RegisterScreen = ({ setUser }) => {
   const [subDepartment, setSubDepartment] = useState('');
   const [yearLevel, setYearLevel] = useState('1');
   const [blockCode, setBlockCode] = useState('');
-  const [maxUnits, setMaxUnits] = useState(28);
+  const maxUnits = 28;
   const navigate = useNavigate();
   const { notify } = useNotification();
 

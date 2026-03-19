@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import 'bootswatch/dist/lux/bootstrap.min.css';
+// Bootswatch theme is loaded from CDN to avoid local sourcemap resolution issues
 import './index.css';
 import App from './App';
 
