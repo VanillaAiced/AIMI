@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
 
 const RegisterScreen = ({ setUser }) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [role, setRole] = useState('student');
@@ -24,9 +25,21 @@ const RegisterScreen = ({ setUser }) => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    if (!name) return notify({ text: 'Please enter your full name', variant: 'danger' });
     if (password !== confirm) return notify({ text: 'Passwords do not match', variant: 'danger' });
+
+    // role-specific validation
+    if (role === 'student') {
+      if (!department) return notify({ text: 'Please select a Department', variant: 'danger' });
+      if (!subDepartment) return notify({ text: 'Please select a Sub-Department', variant: 'danger' });
+      if (!yearLevel) return notify({ text: 'Please select a Year Level', variant: 'danger' });
+      if (!blockCode) return notify({ text: 'Please select a Block', variant: 'danger' });
+    } else if (role === 'professor') {
+      if (!department) return notify({ text: 'Please select a Department', variant: 'danger' });
+      if (!subDepartment) return notify({ text: 'Please select a Sub-Department', variant: 'danger' });
+    }
     try {
-      const payload = { username: username || email, email, password, role };
+      const payload = { name, username: username || email, email, password, role };
       if (role === 'student') {
         payload.department = department;
         payload.sub_department = subDepartment;
@@ -113,6 +126,16 @@ const RegisterScreen = ({ setUser }) => {
         <Card className="p-3">
           <h2>Register</h2>
           <Form onSubmit={submitHandler}>
+            <Form.Group controlId="name" className="my-2">
+              <Form.Label>Full Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </Form.Group>
             <Form.Group className="my-2">
                 <Form.Label>User Type</Form.Label>
                 <Form.Select value={role} onChange={(e)=>setRole(e.target.value)}>

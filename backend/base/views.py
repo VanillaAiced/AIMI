@@ -141,6 +141,14 @@ def signup_view(request):
 		return Response({'status': 'error', 'message': 'username taken'}, status=status.HTTP_400_BAD_REQUEST)
 
 	user = User.objects.create_user(username=username, email=email, password=password)
+	# set provided full name if given
+	try:
+		name = payload.get('name')
+		if name:
+			user.first_name = name
+			user.save()
+	except Exception:
+		pass
 	# optionally set role on Profile if provided
 	role = payload.get('role')
 	try:
@@ -170,24 +178,15 @@ def login_view(request):
 	if not username or not password:
 		return Response({'detail': 'username and password required'}, status=status.HTTP_400_BAD_REQUEST)
 
-	# Try to authenticate
+	# Try to authenticate; do NOT auto-create accounts here — require explicit signup
 	user = authenticate(request, username=username, password=password)
-	created_flag = False
-
 	if user is None:
-		if not User.objects.filter(username=username).exists():
-			user = User.objects.create_user(username=username, email=payload.get('email') or '', password=password)
-			created_flag = True
-			user = authenticate(request, username=username, password=password)
-			if user is None:
-				return Response({'status': 'error', 'message': 'could not create user'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-		else:
-			return Response({'status': 'error', 'message': 'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+		return Response({'status': 'error', 'message': 'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 	# return JWT tokens and role
 	refresh = RefreshToken.for_user(user)
 	role = getattr(getattr(user, 'profile', None), 'role', 'student')
-	return Response({'status': 'ok', 'username': user.username, 'id': user.id, 'created': created_flag, 'access': str(refresh.access_token), 'refresh': str(refresh), 'role': role})
+	return Response({'status': 'ok', 'username': user.username, 'id': user.id, 'created': False, 'access': str(refresh.access_token), 'refresh': str(refresh), 'role': role})
 
 
 @api_view(['POST'])
