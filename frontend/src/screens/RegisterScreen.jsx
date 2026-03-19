@@ -9,6 +9,16 @@ const RegisterScreen = ({ setUser }) => {
   const [role, setRole] = useState('student');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+
+  // Student/Professor specific fields
+  const [departments, setDepartments] = useState([]);
+  const [subdepartments, setSubdepartments] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [department, setDepartment] = useState('');
+  const [subDepartment, setSubDepartment] = useState('');
+  const [yearLevel, setYearLevel] = useState('1');
+  const [blockCode, setBlockCode] = useState('');
+  const [maxUnits, setMaxUnits] = useState(28);
   const navigate = useNavigate();
   const { notify } = useNotification();
 
@@ -16,10 +26,22 @@ const RegisterScreen = ({ setUser }) => {
     e.preventDefault();
     if (password !== confirm) return notify({ text: 'Passwords do not match', variant: 'danger' });
     try {
+      const payload = { username: username || email, email, password, role };
+      if (role === 'student') {
+        payload.department = department;
+        payload.sub_department = subDepartment;
+        payload.year = yearLevel;
+        payload.block = blockCode;
+        payload.max_units = maxUnits;
+      } else if (role === 'professor') {
+        payload.department = department;
+        payload.sub_department = subDepartment;
+      }
+
       const resp = await fetch('/api/auth/signup/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username || email, email, password, role }),
+        body: JSON.stringify(payload),
       });
       if (!resp.ok) {
         const text = await resp.text();
@@ -44,6 +66,47 @@ const RegisterScreen = ({ setUser }) => {
     }
   };
 
+    // Load departments on mount; load subdepartments/blocks on selection
+    React.useEffect(() => {
+      (async () => {
+        try {
+          const token = localStorage.getItem('accessToken');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const dresp = await fetch('/api/departments/', { headers });
+          if (dresp.ok) setDepartments(await dresp.json());
+        } catch (e) {
+          // ignore; departments optional for local setups
+        }
+      })();
+    }, []);
+
+    React.useEffect(() => {
+      (async () => {
+        try {
+          if (!department) return setSubdepartments([]);
+          const headers = { 'Content-Type': 'application/json' };
+          const sresp = await fetch(`/api/subdepartments/?department=${encodeURIComponent(department)}`, { headers });
+          if (sresp.ok) setSubdepartments(await sresp.json());
+        } catch (e) {
+          setSubdepartments([]);
+        }
+      })();
+    }, [department]);
+
+    React.useEffect(() => {
+      (async () => {
+        try {
+          if (!subDepartment) return setBlocks([]);
+          const headers = { 'Content-Type': 'application/json' };
+          const bresp = await fetch(`/api/blocks/?sub_department=${encodeURIComponent(subDepartment)}`, { headers });
+          if (bresp.ok) setBlocks(await bresp.json());
+        } catch (e) {
+          setBlocks([]);
+        }
+      })();
+    }, [subDepartment]);
+
   return (
     <Row className="justify-content-md-center">
       <Col xs={12} md={6}>
@@ -51,13 +114,71 @@ const RegisterScreen = ({ setUser }) => {
           <h2>Register</h2>
           <Form onSubmit={submitHandler}>
             <Form.Group className="my-2">
-              <Form.Label>User Type</Form.Label>
-              <Form.Select value={role} onChange={(e)=>setRole(e.target.value)}>
-                <option value="student">Student</option>
-                <option value="professor">Professor</option>
-                <option value="admin">Admin</option>
-              </Form.Select>
+                <Form.Label>User Type</Form.Label>
+                <Form.Select value={role} onChange={(e)=>setRole(e.target.value)}>
+                  <option value="student">Student</option>
+                  <option value="professor">Professor</option>
+                  <option value="admin">Admin</option>
+                </Form.Select>
             </Form.Group>
+
+              {role === 'student' && (
+                <>
+                  <Form.Group className="my-2">
+                    <Form.Label>Department</Form.Label>
+                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)}>
+                      <option value="">-- Select Department --</option>
+                      {departments.map(d=> <option key={d.id} value={d.name}>{d.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Sub-Department</Form.Label>
+                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)}>
+                      <option value="">-- Select Sub-Department --</option>
+                      {subdepartments.map(s=> <option key={s.id} value={s.name}>{s.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Year Level</Form.Label>
+                    <Form.Select value={yearLevel} onChange={(e)=>setYearLevel(e.target.value)}>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Block</Form.Label>
+                    <Form.Select value={blockCode} onChange={(e)=>setBlockCode(e.target.value)}>
+                      <option value="">-- Select Block --</option>
+                      {blocks.map(b=> <option key={b.id} value={b.code}>{b.code}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Max Units</Form.Label>
+                    <Form.Control readOnly value={maxUnits} />
+                  </Form.Group>
+                </>
+              )}
+
+              {role === 'professor' && (
+                <>
+                  <Form.Group className="my-2">
+                    <Form.Label>Department</Form.Label>
+                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)}>
+                      <option value="">-- Select Department --</option>
+                      {departments.map(d=> <option key={d.id} value={d.name}>{d.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Sub-Department</Form.Label>
+                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)}>
+                      <option value="">-- Select Sub-Department --</option>
+                      {subdepartments.map(s=> <option key={s.id} value={s.name}>{s.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </>
+              )}
             <Form.Group controlId="email" className="my-2">
               <Form.Label>Email address</Form.Label>
               <Form.Control

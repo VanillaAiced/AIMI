@@ -89,7 +89,7 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ScheduleEntrySerializer
     permission_classes = [IsAdminOrReadOnly]
 
-    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def generate(self, request):
         """Trigger schedule generation. Returns summary of created entries."""
         # Only admins should be able to trigger generation

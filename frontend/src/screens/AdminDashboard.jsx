@@ -11,7 +11,7 @@ const AdminDashboard = () => {
       <Row className="mt-3">
         <Col md={3}><Card className="p-2"><h6>Departments</h6><Button onClick={()=>nav('/admin/departments')}>Manage</Button></Card></Col>
         <Col md={3}><Card className="p-2"><h6>Buildings & Rooms</h6><Button onClick={()=>nav('/admin/buildings')}>Manage</Button></Card></Col>
-        <Col md={3}><Card className="p-2"><h6>Time Slots</h6><Button onClick={()=>nav('/admin/timeslots')}>Manage</Button></Card></Col>
+        
         <Col md={3}><Card className="p-2"><h6>Academic Resources</h6><Button onClick={()=>nav('/admin/resources')}>Manage</Button></Card></Col>
       </Row>
       <Row className="mt-3">

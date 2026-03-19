@@ -5,14 +5,8 @@ import { useNavigate } from 'react-router-dom';
 const HomeScreen = () => {
   const navigate = useNavigate();
   const handleStart = () => {
-    try {
-      const raw = localStorage.getItem('user');
-      const user = raw ? JSON.parse(raw) : null;
-      if (user) navigate('/data-input');
-      else navigate('/login');
-    } catch (e) {
-      navigate('/login');
-    }
+    // Redirect Start Scheduling to admin dashboard (admin manages inputs and generation)
+    try { navigate('/admin'); } catch (e) { navigate('/login'); }
   };
   return (
     <Container className="text-center mt-5">

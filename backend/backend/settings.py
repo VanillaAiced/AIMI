@@ -82,6 +82,11 @@ if FRONTEND_BUILD_DIR.exists():
     # add the build dir to template search paths
     TEMPLATES[0]['DIRS'].append(str(FRONTEND_BUILD_DIR))
 
+# Toggle serving the built frontend from Django. Set to True only when you
+# intentionally want Django to serve the frontend build (e.g., simple deploy).
+# Keep False during backend-only development.
+SERVE_FRONTEND = False
+
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 

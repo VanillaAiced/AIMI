@@ -144,10 +144,10 @@ const SchedulePreviewScreen = () => {
         </>
       ) : (
         <Alert variant="warning" className="mt-3">
-          <i className="fas fa-exclamation-triangle"></i> No schedule data found. Please go back to the Data Input Dashboard and add your subjects, professors, and rooms.
+          <i className="fas fa-exclamation-triangle"></i> No schedule data found. Please open the Admin Dashboard to manage inputs and trigger schedule generation.
           <div className="mt-3">
-            <Button variant="primary" onClick={() => navigate('/data-input')}>
-              Go to Data Input
+            <Button variant="primary" onClick={() => navigate('/admin')}>
+              Open Admin Dashboard
             </Button>
           </div>
         </Alert>
