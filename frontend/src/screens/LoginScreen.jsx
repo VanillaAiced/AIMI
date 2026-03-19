@@ -37,12 +37,14 @@ const LoginScreen = ({ setUser }) => {
 
         if (json.created) {
           notify({ text: 'Account created and signed in as ' + json.username, variant: 'success' });
-          setTimeout(() => navigate('/data-input'), 900);
-          return;
+        } else {
+          notify({ text: 'Signed in as ' + json.username, variant: 'success' });
         }
 
-        notify({ text: 'Signed in as ' + json.username, variant: 'success' });
-        setTimeout(() => navigate('/data-input'), 400);
+        // Redirect based on authoritative role
+        if (serverRole === 'admin') setTimeout(() => navigate('/admin'), 300);
+        else if (serverRole === 'professor') setTimeout(() => navigate('/professor'), 300);
+        else setTimeout(() => navigate('/student'), 300);
       } catch (err) {
         notify({ text: 'Login error: ' + err.message, variant: 'danger' });
       }

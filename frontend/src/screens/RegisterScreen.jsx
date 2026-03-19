@@ -34,8 +34,11 @@ const RegisterScreen = ({ setUser }) => {
       const user = { email, name: json.username, role: serverRole };
       localStorage.setItem('user', JSON.stringify(user));
       if (setUser) setUser(user);
-      if (setTimeout) notify({ text: 'Signup successful — signed in as ' + json.username, variant: 'success' });
-      setTimeout(() => navigate('/data-input'), 700);
+      notify({ text: 'Signup successful — signed in as ' + json.username, variant: 'success' });
+      // Redirect based on authoritative role
+      if (serverRole === 'admin') setTimeout(() => navigate('/admin'), 700);
+      else if (serverRole === 'professor') setTimeout(() => navigate('/professor'), 700);
+      else setTimeout(() => navigate('/student'), 700);
     } catch (err) {
       notify({ text: 'Signup error: ' + err.message, variant: 'danger' });
     }
