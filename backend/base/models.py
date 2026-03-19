@@ -227,4 +227,6 @@ class Profile(models.Model):
 @receiver(post_save, sender=get_user_model())
 def create_user_profile(sender, instance, created, **kwargs):
 	if created:
-		Profile.objects.create(user=instance)
+		# If a superuser is created (e.g., via `createsuperuser`), make them admin.
+		role = 'admin' if getattr(instance, 'is_superuser', False) else 'student'
+		Profile.objects.create(user=instance, role=role)

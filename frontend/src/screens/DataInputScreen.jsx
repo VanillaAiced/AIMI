@@ -7,6 +7,7 @@ const DataInputScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('subjects');
   const [subjects, setSubjects] = useState([]);
+  // Professors are expected to register themselves; remove admin bulk-create
   const [professors, setProfessors] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [sections, setSections] = useState([]);
@@ -77,12 +78,12 @@ const DataInputScreen = () => {
 
   const handleValidateData = async () => {
     // Simple validation
-    if (subjects.length === 0 || professors.length === 0 || rooms.length === 0 || sections.length === 0) {
-      notify({ text: 'Please add at least one entry in each category', variant: 'danger' });
+    if (subjects.length === 0 || rooms.length === 0 || sections.length === 0) {
+      notify({ text: 'Please add at least one entry in each category (professors register themselves).', variant: 'danger' });
       return;
     }
 
-    const payload = { subjects, professors, rooms, sections };
+    const payload = { subjects, rooms, sections };
 
     const token = localStorage.getItem('accessToken');
     const headers = { 'Content-Type': 'application/json' };
@@ -121,11 +122,7 @@ const DataInputScreen = () => {
           await fetch('/api/courses/', { method: 'POST', headers, body: JSON.stringify(body) });
         }
 
-        // 4) create professors
-        for (const p of professors) {
-          const body = { name: p.name, availability: p.availability || '' };
-          await fetch('/api/professors/', { method: 'POST', headers, body: JSON.stringify(body) });
-        }
+        // Professors should self-register; skip creating professors here.
 
         // 5) create departments/subdepartments/blocks (sections)
         for (const sec of sections) {

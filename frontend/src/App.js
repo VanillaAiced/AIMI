@@ -30,17 +30,27 @@ import ProfessorDashboard from './screens/ProfessorDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import SetupProgress from './components/SetupProgress';
 
+// Module-level guard so the auth bootstrap runs only once across remounts/HMR
+let authBootstrapped = false;
+
 function App() {
   const [user, setUser] = useState(null);
+
 
   // Component rendered inside NotificationProvider so it can use the notification hook.
   const AuthBootstrap = ({ setUser }) => {
     const navigate = useNavigate();
     const { notify } = useNotification();
-
     React.useEffect(() => {
+      if (authBootstrapped) return;
+      authBootstrapped = true;
       (async () => {
         try {
+          // Throttle repeated checks across tabs/remounts: skip if last check <30s
+          const last = sessionStorage.getItem('lastAuthCheck');
+          if (last && Date.now() - parseInt(last, 10) < 30_000) return;
+          sessionStorage.setItem('lastAuthCheck', String(Date.now()));
+
           const token = localStorage.getItem('accessToken');
           if (!token) return;
           const resp = await fetch('/api/auth/me/', {

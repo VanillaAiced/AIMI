@@ -1,0 +1,17 @@
+name: aimi
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - django=6.0.2
+  - djangorestframework
+  - djangorestframework-simplejwt
+  - django-cors-headers=4.9.0
+  - whitenoise=6.4.0
+  - pandas=2.1.4
+  - numpy
+  - ortools
+  - pip
+  - pip:
+    - python-dotenv==1.0.0
+    - -r file:requirements.txt

@@ -138,10 +138,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Additional locations the staticfiles app will traverse
-# Include a local `static/` folder and the frontend build static (if present)
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+# Include a local `static/` folder and the frontend build static (if present).
+# Only add paths that actually exist to avoid warnings when the folder isn't present.
+STATICFILES_DIRS = []
+local_static = BASE_DIR / 'static'
+if local_static.exists():
+    STATICFILES_DIRS.append(local_static)
 if FRONTEND_BUILD_STATIC.exists():
     STATICFILES_DIRS.append(FRONTEND_BUILD_STATIC)
 
