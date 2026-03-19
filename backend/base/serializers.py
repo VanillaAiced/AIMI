@@ -184,6 +184,9 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
 
 
 class CurriculumSerializer(serializers.ModelSerializer):
+    # make courses writable as a PK list so PATCH payloads like { courses: [1,2] } update DB
+    courses = serializers.PrimaryKeyRelatedField(many=True, queryset=models.Course.objects.all(), required=False)
+
     class Meta:
         model = models.Curriculum
         fields = '__all__'
@@ -211,12 +214,17 @@ class CurriculumSerializer(serializers.ModelSerializer):
         original_name = validated_data.get('name', None)
         should_regen_name = (not original_name) or (isinstance(original_name, str) and (original_name.strip().lower() == 'curriculum' or original_name.strip().endswith('Curriculum')))
         blocks = validated_data.pop('blocks', None)
+        # accept courses list and apply after create to ensure m2m saved
+        courses = validated_data.pop('courses', None)
         sub = validated_data.get('sub_department')
         # perform create
         curriculum = super().create(validated_data)
         # attach blocks if provided
         if blocks is not None:
             curriculum.blocks.set(blocks)
+        # attach courses if provided
+        if courses is not None:
+            curriculum.courses.set(courses)
 
         # auto-generate a sensible name if caller didn't provide one or used a placeholder
         if should_regen_name:
@@ -249,10 +257,14 @@ class CurriculumSerializer(serializers.ModelSerializer):
         name_in_payload = 'name' in validated_data
         # intercept blocks to set them explicitly after update
         blocks = validated_data.pop('blocks', None)
+        # intercept courses list if provided
+        courses = validated_data.pop('courses', None)
         sub_changed = 'sub_department' in validated_data
         result = super().update(instance, validated_data)
         if blocks is not None:
             result.blocks.set(blocks)
+        if courses is not None:
+            result.courses.set(courses)
 
         # regenerate name when caller did not explicitly set a name and blocks/sub_department changed
         if not name_in_payload and (blocks is not None or sub_changed):

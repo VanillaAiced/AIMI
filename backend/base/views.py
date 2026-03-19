@@ -187,6 +187,29 @@ def signup_view(request):
 				# ignore lookup errors
 				pass
 			profile.save()
+			
+			# Ensure a Professor row exists for professor signups (mirror Student creation logic)
+			if role == 'professor':
+				try:
+					from .models import Professor
+					prof_defaults = {
+						'availability': '',
+						'department': profile.department,
+						'sub_department': profile.sub_department,
+						'email': user.email,
+						'owner_session': user.username,
+					}
+					prof_name = user.first_name or user.username
+					if user.email:
+						prof, _ = Professor.objects.update_or_create(email=user.email, defaults={**prof_defaults, 'name': prof_name})
+					else:
+						prof, _ = Professor.objects.update_or_create(name=prof_name, defaults=prof_defaults)
+					# link to the created User for admin convenience
+					prof.user = user
+					prof.save()
+				except Exception:
+					# don't block signup if professor creation fails
+					pass
 	except Exception:
 		# don't block signup if profile handling fails
 		pass
@@ -261,22 +284,20 @@ def logout_view(request):
 	owner = request.user.username
 
 	subj_qs = Course.objects.filter(owner_session=owner)
-	prof_qs = Professor.objects.filter(owner_session=owner)
 	room_qs = Room.objects.filter(owner_session=owner)
 	section_qs = Block.objects.filter(owner_session=owner)
 
 	subj_count = subj_qs.count()
-	prof_count = prof_qs.count()
 	room_count = room_qs.count()
 	section_count = section_qs.count()
 
 	subj_qs.delete()
-	prof_qs.delete()
 	room_qs.delete()
 	section_qs.delete()
 
 	# For JWT we don't manage server-side session logout here; client should discard tokens
-	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'professors': prof_count, 'rooms': room_count, 'sections': section_count}})
+	# Do not delete Professor rows on logout — these should persist and be manageable in admin
+	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'rooms': room_count, 'sections': section_count}})
 
 
 @api_view(['POST'])
@@ -287,21 +308,20 @@ def clear_data_view(request):
 	owner = request.user.username
 
 	subj_qs = Course.objects.filter(owner_session=owner)
-	prof_qs = Professor.objects.filter(owner_session=owner)
 	room_qs = Room.objects.filter(owner_session=owner)
 	section_qs = Block.objects.filter(owner_session=owner)
 
+	# Count items to be deleted (do not delete Professor rows here)
 	subj_count = subj_qs.count()
-	prof_count = prof_qs.count()
 	room_count = room_qs.count()
 	section_count = section_qs.count()
 
+	# Delete only schedule-related items owned by this user.
 	subj_qs.delete()
-	prof_qs.delete()
 	room_qs.delete()
 	section_qs.delete()
 
-	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'professors': prof_count, 'rooms': room_count, 'sections': section_count}})
+	return Response({'status': 'ok', 'deleted': {'subjects': subj_count, 'rooms': room_count, 'sections': section_count}})
 
 
 @api_view(['GET'])

@@ -131,6 +131,7 @@ const CurriculumScreen = () => {
 
   // Courses modal state
   const [showCoursesModal, setShowCoursesModal] = useState(false);
+  const [showCoursesView, setShowCoursesView] = useState(false);
   const [coursesCurriculum, setCoursesCurriculum] = useState(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState([]);
 
@@ -182,7 +183,8 @@ const CurriculumScreen = () => {
     setCoursesCurriculum(curr);
     const courseIds = Array.isArray(curr.courses) ? curr.courses.map(x => (typeof x === 'number' ? x : (x && x.id ? x.id : null))).filter(Boolean) : [];
     setSelectedCourseIds(courseIds);
-    setShowCoursesModal(true);
+    // show view-only modal first; user can click Manage to open the add/remove layer
+    setShowCoursesView(true);
   };
 
   const toggleCourse = (id) => {
@@ -366,6 +368,36 @@ const CurriculumScreen = () => {
         <Modal.Footer>
           <Button onClick={saveCourses}>Save</Button>
           <Button variant="secondary" onClick={()=>{ setShowCoursesModal(false); setCoursesCurriculum(null); setSelectedCourseIds([]); }}>Cancel</Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* View-only Courses modal: shows current courses in the curriculum */}
+      <Modal show={showCoursesView} onHide={()=>{ setShowCoursesView(false); setCoursesCurriculum(null); setSelectedCourseIds([]); }} centered size="lg">
+        <Modal.Header closeButton><Modal.Title>Courses in Curriculum</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <div className="mb-2">These courses are currently assigned to this curriculum.</div>
+          <Table striped>
+            <thead><tr><th>Code</th><th>Name</th><th>Units</th></tr></thead>
+            <tbody>
+              {coursesCurriculum && Array.isArray(coursesCurriculum.courses) && coursesCurriculum.courses.length ? (
+                coursesCurriculum.courses.map(ci => {
+                  // ci may be PK or object
+                  const id = typeof ci === 'number' ? ci : (ci && ci.id ? ci.id : null);
+                  const courseObj = (courses || []).find(c => c.id === id) || (typeof ci === 'object' ? ci : null);
+                  return courseObj ? (
+                    <tr key={id}><td>{courseObj.code}</td><td>{courseObj.name}</td><td>{courseObj.units || 0}</td></tr>
+                  ) : null;
+                })
+              ) : (
+                <tr><td colSpan={3}>No courses assigned</td></tr>
+              )}
+            </tbody>
+          </Table>
+          <div className="mt-2 text-end"><strong>Total Units: {coursesCurriculum ? (Array.isArray(coursesCurriculum.courses) ? coursesCurriculum.courses.reduce((s, ci) => { const id = typeof ci === 'number' ? ci : (ci && ci.id ? ci.id : null); const c = (courses||[]).find(x=>x.id===id); return s + (c ? (Number(c.units)||0) : 0); }, 0) : 0) : 0}</strong></div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={()=>{ setShowCoursesView(false); setShowCoursesModal(true); /* ensure selectedCourseIds already set */ }}>Manage</Button>
+          <Button variant="secondary" onClick={()=>{ setShowCoursesView(false); setCoursesCurriculum(null); setSelectedCourseIds([]); }}>Close</Button>
         </Modal.Footer>
       </Modal>
     </div>

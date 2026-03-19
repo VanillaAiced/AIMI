@@ -166,6 +166,8 @@ class YearLevel(models.Model):
 # Professors
 class Professor(models.Model):
 	name = models.CharField(max_length=200)
+	# link to Django user for easy lookup in admin and programmatic linking
+	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='professor_profile')
 	availability = models.TextField(blank=True)
 	email = models.EmailField(blank=True, null=True)
 	department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='professors')
