@@ -29,9 +29,9 @@ const RegisterScreen = ({ setUser }) => {
       // store tokens and set user
       if (json.access) localStorage.setItem('accessToken', json.access);
       if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
-      const user = { email, name: json.username };
-      // persist role locally for client-side routing
-      user.role = role;
+      // server returns authoritative role; fall back to selected role
+      const serverRole = json.role || role;
+      const user = { email, name: json.username, role: serverRole };
       localStorage.setItem('user', JSON.stringify(user));
       if (setUser) setUser(user);
       if (setTimeout) notify({ text: 'Signup successful — signed in as ' + json.username, variant: 'success' });

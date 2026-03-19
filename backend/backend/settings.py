@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 
+# Use BigAutoField by default to avoid AutoField warnings
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
