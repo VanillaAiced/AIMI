@@ -6,7 +6,16 @@ const CoursesScreen = () => {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   useEffect(()=>{ fetch('/api/courses/').then(r=>r.ok? r.json(): []).then(j=>setList(j)).catch(()=>{}); },[]);
-  const add=async(e)=>{ e.preventDefault(); const resp=await fetch('/api/courses/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,name})}); if(resp.ok){ setList(l=>[...l,await resp.json()]); setCode(''); setName(''); } };
+  const add = async (e) => {
+    e.preventDefault();
+    const resp = await fetch('/api/courses/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, name }) });
+    if (resp.ok) {
+      const data = await resp.json();
+      setList((l) => [...l, data]);
+      setCode('');
+      setName('');
+    }
+  };
   return (
     <div>
       <h3>Courses</h3>

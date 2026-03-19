@@ -32,7 +32,7 @@ const BlocksScreen = ()=>{
   },[deptId, subdepartments]);
 
   const add = async (e)=>{ e.preventDefault(); const resp = await fetch('/api/blocks/',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({code, sub_department: subdeptId, year})}); if(resp.ok){ const j=await resp.json(); setList(s=>[...s,j]); setCode(''); } };
-  const remove = async (id)=>{ if(!confirm('Delete block?')) return; const r = await fetch(`/api/blocks/${id}/`,{method:'DELETE'}); if(r.ok) setList(s=>s.filter(b=>b.id!==id)); };
+  const remove = async (id)=>{ if(!window.confirm('Delete block?')) return; const r = await fetch(`/api/blocks/${id}/`,{method:'DELETE'}); if(r.ok) setList(s=>s.filter(b=>b.id!==id)); };
 
   return (
     <div>

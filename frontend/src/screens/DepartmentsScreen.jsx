@@ -31,7 +31,7 @@ const DepartmentsScreen = () => {
   };
 
   const remove = async (id)=>{
-    if (!confirm('Delete this department?')) return;
+    if (!window.confirm('Delete this department?')) return;
     const resp = await fetch(`/api/departments/${id}/`, { method: 'DELETE' });
     if (resp.ok) setList((s)=>s.filter(d=>d.id!==id));
   };

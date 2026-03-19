@@ -3,7 +3,8 @@ django-cors-headers==4.9.0
 whitenoise==6.4.0
 
 # Optional/data-processing
-ortools==9.8.3296
+# Use a currently available ortools release
+ortools==9.15.6755
 pandas==2.1.4
 
 # Dev / config

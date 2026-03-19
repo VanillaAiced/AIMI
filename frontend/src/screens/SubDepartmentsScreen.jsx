@@ -43,7 +43,7 @@ const SubDepartmentsScreen = ()=>{
     if(resp.ok){ const j = await resp.json(); setList(s=>[...s,j]); setName(''); }
   };
 
-  const remove = async (id)=>{ if(!confirm('Delete sub-department?')) return; const resp=await fetch(`/api/subdepartments/${id}/`,{method:'DELETE'}); if(resp.ok) setList(s=>s.filter(x=>x.id!==id)); };
+  const remove = async (id)=>{ if(!window.confirm('Delete sub-department?')) return; const resp=await fetch(`/api/subdepartments/${id}/`,{method:'DELETE'}); if(resp.ok) setList(s=>s.filter(x=>x.id!==id)); };
 
   return (
     <div>
