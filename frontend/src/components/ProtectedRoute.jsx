@@ -5,7 +5,15 @@ import { Navigate, Link } from 'react-router-dom';
 const ProtectedRoute = ({ role, children }) => {
   try {
     const raw = localStorage.getItem('user');
-    if (!raw) return <Navigate to="/login" replace />;
+    // If `user` isn't populated yet but we have an access token, allow the route
+    // to render optimistically — the app bootstrap will verify the token and
+    // populate `user` shortly after. This prevents a flash to the login page
+    // on full-page reloads when auth state is stored in localStorage.
+    if (!raw) {
+      const token = localStorage.getItem('accessToken');
+      if (token) return children;
+      return <Navigate to="/login" replace />;
+    }
     const user = JSON.parse(raw);
     // Expect authoritative role to be provided by the server and persisted to localStorage
     const userRole = user.role;
