@@ -45,8 +45,10 @@ class RoomTypeSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    # allow nested create for room_type and building (accept id or dict)
-    room_type = serializers.PrimaryKeyRelatedField(queryset=models.RoomType.objects.all(), allow_null=True, required=False)
+    # accept room_type as a string name or as an object; we handle creation in create/update
+    room_type = serializers.CharField(allow_null=True, required=False)
+    # expose room_type name for frontend convenience
+    room_type_name = serializers.CharField(source='room_type.name', read_only=True)
     building = serializers.PrimaryKeyRelatedField(queryset=models.Building.objects.all(), allow_null=True, required=False)
 
     class Meta:
@@ -66,8 +68,12 @@ class RoomSerializer(serializers.ModelSerializer):
         bd = validated_data.pop('building', None)
 
         # if caller passed nested dicts (not typical with PKRelatedField), handle gracefully
+        # allow rt as dict, string name, or already-resolved instance
         if isinstance(rt, dict):
             rt_obj, _ = models.RoomType.objects.get_or_create(**rt)
+            validated_data['room_type'] = rt_obj
+        elif isinstance(rt, str):
+            rt_obj, _ = models.RoomType.objects.get_or_create(name=rt)
             validated_data['room_type'] = rt_obj
         elif rt is not None:
             validated_data['room_type'] = rt
@@ -88,6 +94,9 @@ class RoomSerializer(serializers.ModelSerializer):
         bd = validated_data.pop('building', None)
         if isinstance(rt, dict):
             rt_obj, _ = models.RoomType.objects.get_or_create(**rt)
+            validated_data['room_type'] = rt_obj
+        elif isinstance(rt, str):
+            rt_obj, _ = models.RoomType.objects.get_or_create(name=rt)
             validated_data['room_type'] = rt_obj
         elif rt is not None:
             validated_data['room_type'] = rt

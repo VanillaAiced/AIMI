@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, Row, Col } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import SetupProgress from '../components/SetupProgress';
 
 // disable generate until prerequisites exist
 
 const ScheduleGeneratorScreen = ()=>{
+  const navigate = useNavigate();
   const [running,setRunning]=useState(false);
   const [ready, setReady] = useState(false);
   const onStatus = (counts) => {
@@ -27,7 +29,11 @@ const ScheduleGeneratorScreen = ()=>{
   };
   return (
     <div>
-      <h3>Schedule Generator</h3>
+      <Row className="align-items-center mb-3">
+        <Col xs="auto"><Button size="sm" variant="secondary" onClick={()=>navigate('/admin')}>Back</Button></Col>
+        <Col><h3 className="text-center mb-0">Schedule Generator</h3></Col>
+        <Col xs="auto" />
+      </Row>
       <SetupProgress onStatus={onStatus} />
       <div className="mt-3">
         <Button onClick={run} disabled={running || !ready}>{running? 'Running...':'Generate Schedule'}</Button>

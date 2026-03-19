@@ -23,11 +23,25 @@ class SubDepartmentViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.SubDepartmentSerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        dept = self.request.query_params.get('department')
+        if dept:
+            return qs.filter(department__id=dept)
+        return qs
+
 
 class BlockViewSet(viewsets.ModelViewSet):
     queryset = models.Block.objects.all()
     serializer_class = serializers.BlockSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        sub = self.request.query_params.get('sub_department')
+        if sub:
+            return qs.filter(sub_department__id=sub)
+        return qs
 
 
 class BuildingViewSet(viewsets.ModelViewSet):
@@ -46,6 +60,13 @@ class RoomViewSet(viewsets.ModelViewSet):
     queryset = models.Room.objects.all()
     serializer_class = serializers.RoomSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        b = self.request.query_params.get('building')
+        if b:
+            return qs.filter(building__id=b)
+        return qs
 
 
 class TimeSlotViewSet(viewsets.ModelViewSet):
