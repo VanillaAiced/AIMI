@@ -220,6 +220,11 @@ class Profile(models.Model):
 	]
 	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
 	role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+	# optional academic links for students/professors
+	department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+	sub_department = models.ForeignKey(SubDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+	year = models.IntegerField(null=True, blank=True)
+	block = models.ForeignKey(Block, on_delete=models.SET_NULL, null=True, blank=True)
 
 	def __str__(self):
 		return f"{self.user.username} ({self.role})"

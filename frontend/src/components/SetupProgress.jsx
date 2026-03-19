@@ -20,9 +20,10 @@ const SetupProgress = ({ onStatus }) => {
         if (cs.ok) res.courses = (await cs.json()).length;
         if (ofs.ok) res.offerings = (await ofs.json()).length;
         if (profs.ok) {
-          const p = await profs.json();
-          res.professors = p.length;
-          setPeople(prev => ({ ...prev, professors: p }));
+          const pjson = await profs.json();
+          const p = Array.isArray(pjson) ? pjson : (pjson.results || pjson);
+          res.professors = Array.isArray(p) ? p.length : 0;
+          setPeople(prev => ({ ...prev, professors: Array.isArray(p) ? p : [] }));
         }
         if (users.ok) {
           const ujson = await users.json();
@@ -61,20 +62,20 @@ const SetupProgress = ({ onStatus }) => {
         <Tab eventKey="people" title="People">
           <h6 className="mt-2">Professors</h6>
           <Table size="sm" striped>
-            <thead><tr><th>Name</th><th>Availability</th></tr></thead>
+            <thead><tr><th>Name</th><th>Department</th><th>Sub-department</th></tr></thead>
             <tbody>
               {people.professors.map(p => (
-                <tr key={p.id}><td>{p.name}</td><td>{p.availability || ''}</td></tr>
+                <tr key={p.id}><td>{p.name}</td><td>{p.department_name || p.department || ''}</td><td>{p.sub_department_name || p.sub_department || ''}</td></tr>
               ))}
             </tbody>
           </Table>
 
           <h6 className="mt-3">Students</h6>
           <Table size="sm" striped>
-            <thead><tr><th>Username</th><th>Email</th><th>Role</th></tr></thead>
+            <thead><tr><th>Username</th><th>Email</th><th>Department</th><th>Sub-department</th><th>Year</th><th>Block</th></tr></thead>
             <tbody>
               {people.students.map(s => (
-                <tr key={s.id}><td>{s.username}</td><td>{s.email}</td><td>{s.role || 'student'}</td></tr>
+                <tr key={s.id}><td>{s.username}</td><td>{s.email}</td><td>{s.department_name || ''}</td><td>{s.sub_department_name || ''}</td><td>{s.year || ''}</td><td>{s.block_code || ''}</td></tr>
               ))}
             </tbody>
           </Table>

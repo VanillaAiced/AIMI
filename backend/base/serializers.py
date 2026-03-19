@@ -192,6 +192,8 @@ class YearLevelSerializer(serializers.ModelSerializer):
 
 
 class ProfessorSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
     class Meta:
         model = models.Professor
         fields = '__all__'

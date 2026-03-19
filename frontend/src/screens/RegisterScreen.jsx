@@ -111,13 +111,17 @@ const RegisterScreen = ({ setUser }) => {
         try {
           if (!subDepartment) return setBlocks([]);
           const headers = { 'Content-Type': 'application/json' };
-          const bresp = await fetch(`/api/blocks/?sub_department=${encodeURIComponent(subDepartment)}`, { headers });
+          // fetch only blocks that match selected sub-department AND year level
+          const params = new URLSearchParams();
+          params.set('sub_department', subDepartment);
+          if (yearLevel) params.set('year', yearLevel);
+          const bresp = await fetch(`/api/blocks/?${params.toString()}`, { headers });
           if (bresp.ok) setBlocks(await bresp.json());
         } catch (e) {
           setBlocks([]);
         }
       })();
-    }, [subDepartment]);
+    }, [subDepartment, yearLevel]);
 
   return (
     <Row className="justify-content-md-center">
@@ -149,14 +153,14 @@ const RegisterScreen = ({ setUser }) => {
                     <Form.Label>Department</Form.Label>
                     <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)}>
                       <option value="">-- Select Department --</option>
-                      {departments.map(d=> <option key={d.id} value={d.name}>{d.name}</option>)}
+                      {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="my-2">
                     <Form.Label>Sub-Department</Form.Label>
                     <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)}>
                       <option value="">-- Select Sub-Department --</option>
-                      {subdepartments.map(s=> <option key={s.id} value={s.name}>{s.name}</option>)}
+                      {subdepartments.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="my-2">
@@ -185,14 +189,14 @@ const RegisterScreen = ({ setUser }) => {
                     <Form.Label>Department</Form.Label>
                     <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)}>
                       <option value="">-- Select Department --</option>
-                      {departments.map(d=> <option key={d.id} value={d.name}>{d.name}</option>)}
+                      {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="my-2">
                     <Form.Label>Sub-Department</Form.Label>
                     <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)}>
                       <option value="">-- Select Sub-Department --</option>
-                      {subdepartments.map(s=> <option key={s.id} value={s.name}>{s.name}</option>)}
+                      {subdepartments.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
                     </Form.Select>
                   </Form.Group>
                 </>

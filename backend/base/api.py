@@ -39,8 +39,15 @@ class BlockViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         sub = self.request.query_params.get('sub_department')
+        year = self.request.query_params.get('year')
         if sub:
-            return qs.filter(sub_department__id=sub)
+            qs = qs.filter(sub_department__id=sub)
+        if year:
+            try:
+                y = int(year)
+                qs = qs.filter(year=y)
+            except ValueError:
+                pass
         return qs
 
 

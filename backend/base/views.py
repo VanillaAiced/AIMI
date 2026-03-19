@@ -156,6 +156,36 @@ def signup_view(request):
 		profile = getattr(user, 'profile', None)
 		if profile and role in ('professor', 'student'):
 			profile.role = role
+			# persist optional academic fields if provided in signup
+			dept = payload.get('department')
+			sub = payload.get('sub_department')
+			yr = payload.get('year')
+			blk = payload.get('block')
+			try:
+				from .models import Department, SubDepartment, Block
+				if dept:
+					if isinstance(dept, int) or (isinstance(dept, str) and dept.isdigit()):
+						profile.department = Department.objects.filter(id=int(dept)).first()
+					else:
+						profile.department = Department.objects.filter(name=dept).first()
+				if sub:
+					if isinstance(sub, int) or (isinstance(sub, str) and sub.isdigit()):
+						profile.sub_department = SubDepartment.objects.filter(id=int(sub)).first()
+					else:
+						profile.sub_department = SubDepartment.objects.filter(name=sub).first()
+				if yr:
+					try:
+						profile.year = int(yr)
+					except Exception:
+						pass
+				if blk:
+					if isinstance(blk, int) or (isinstance(blk, str) and blk.isdigit()):
+						profile.block = Block.objects.filter(id=int(blk)).first()
+					else:
+						profile.block = Block.objects.filter(code=blk).first()
+			except Exception:
+				# ignore lookup errors
+				pass
 			profile.save()
 	except Exception:
 		# don't block signup if profile handling fails
@@ -318,12 +348,29 @@ def admin_users_view(request):
 	User = get_user_model()
 	users = []
 	for u in User.objects.order_by('username').all():
+		prof = getattr(u, 'profile', None)
+		dept_name = None
+		sub_name = None
+		year = None
+		block_code = None
+		try:
+			if prof:
+				if prof.department: dept_name = prof.department.name
+				if prof.sub_department: sub_name = prof.sub_department.name
+				year = prof.year
+				if prof.block: block_code = prof.block.code
+		except Exception:
+			pass
 		users.append({
 			'id': u.id,
 			'username': u.username,
 			'email': u.email,
 			'is_superuser': u.is_superuser,
 			'is_staff': u.is_staff,
-			'role': getattr(getattr(u, 'profile', None), 'role', None)
+			'role': getattr(getattr(u, 'profile', None), 'role', None),
+			'department_name': dept_name,
+			'sub_department_name': sub_name,
+			'year': year,
+			'block_code': block_code,
 		})
 	return Response({'users': users}, status=status.HTTP_200_OK)
