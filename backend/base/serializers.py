@@ -186,6 +186,9 @@ class CurriculumSerializer(serializers.ModelSerializer):
 
 
 class YearLevelSerializer(serializers.ModelSerializer):
+    # expose blocks as PK list to help frontend filter year-levels by blocks
+    blocks = serializers.PrimaryKeyRelatedField(many=True, queryset=models.Block.objects.all(), required=False)
+
     class Meta:
         model = models.YearLevel
         fields = '__all__'

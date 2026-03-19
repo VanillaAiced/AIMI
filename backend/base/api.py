@@ -104,6 +104,29 @@ class YearLevelViewSet(viewsets.ModelViewSet):
     queryset = models.YearLevel.objects.all()
     serializer_class = serializers.YearLevelSerializer
     permission_classes = [IsAdminOrReadOnly]
+    def get_queryset(self):
+        qs = super().get_queryset()
+        sub = self.request.query_params.get('sub_department')
+        dept = self.request.query_params.get('department')
+        if sub:
+            # YearLevels that are explicitly linked to blocks under this sub-department
+            qs = qs.filter(blocks__sub_department__id=sub).distinct()
+            # also include YearLevels that match by numeric year in their name where matching blocks exist
+            try:
+                sub_id = int(sub)
+                from django.db.models import Q
+                # find numeric years present in blocks for this sub-department
+                years = models.Block.objects.filter(sub_department__id=sub_id).values_list('year', flat=True).distinct()
+                q = Q()
+                for y in years:
+                    q |= Q(name__iregex=rf"\b{y}\b")
+                if q:
+                    qs = qs.union(models.YearLevel.objects.filter(q))
+            except Exception:
+                pass
+        if dept:
+            qs = qs.filter(curriculum__sub_department__department__id=dept)
+        return qs
 
 
 class ProfessorViewSet(viewsets.ModelViewSet):
