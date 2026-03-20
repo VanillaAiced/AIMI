@@ -1,34 +1,40 @@
 # AIMI — Academic Timetabling
 
-This repository is a Django backend and React frontend application for managing academic resources and generating course schedules.
+Lightweight Django backend and React frontend for managing academic data and generating schedules.
 
 Quick start
-1. Backend (Python/Django)
-	- Create and activate a virtualenv (Python 3.11+ recommended).
-	- Install dependencies: `pip install -r requirements.txt`.
-	- Apply migrations: `python manage.py migrate`.
-	- (Optional) Create a superuser: `python manage.py createsuperuser`.
-	- Run dev server: `python manage.py runserver`.
 
-2. Frontend (React)
-	- Install node deps: `cd frontend && npm install`.
-	- Run dev server: `npm start` (in `frontend`)
-	- Create production build: `npm run build` (outputs to `frontend/build`)
+Backend
+- Create and activate a Python virtual environment (Python 3.11+ recommended).
+- Install dependencies: `pip install -r requirements.txt`.
+- Apply migrations: `python manage.py migrate`.
+- (Optional) Create a superuser: `python manage.py createsuperuser`.
+- Run dev server: `python manage.py runserver`.
 
-API notes / recent changes
-- The legacy `CourseOffering` model and `/api/course-offerings/` endpoint were removed. Use `curricula` to link `course`s to `block`s instead.
-- The `YearLevel` model was removed from the code and database.
-- `Professor.availability` was removed; professors are assumed available by default.
-- Scheduler: POST `/api/schedule-entries/generate/` triggers schedule generation. The scheduler enforces hard constraints (no overlaps for block/professor/room; room & professor requirements; duration & frequency) and applies optional heuristics (avoid very early/late, reduce gaps, prioritize higher-unit courses).
+Frontend
+- Install dependencies: `cd frontend && npm install`.
+- Run dev server: `npm start`.
+- Build production assets: `npm run build` (outputs to `frontend/build`).
 
-Testing
-- Run backend tests: `python manage.py test` (from `backend` folder).
+Site flow (pages)
+- Admin Dashboard — entry for administrators.
+  - Academic Resources: manage `Courses`, `Curricula` (links courses to blocks), `Buildings`, `Rooms`, `Professors`, `Blocks`.
+  - Schedule Generator: run the scheduler to produce timetable entries.
+  - Schedule Viewer: inspect generated timetables and export.
+- Professor Dashboard — view assignments relevant to a professor.
+- Student Dashboard — view schedule for a student/block.
+- Authentication: signup, login, and profile endpoints.
 
-Troubleshooting
-- If frontend still references removed endpoints, rebuild the frontend: `cd frontend && npm run build`.
-- After model changes, run `python manage.py makemigrations` and `python manage.py migrate`.
+API notes
+- Use `curricula` to associate `course`s with `block`s (replaces the legacy `course-offerings` endpoint).
+- Trigger schedule generation: `POST /api/schedule-entries/generate/`.
+- Common endpoints: `/api/courses/`, `/api/curricula/`, `/api/blocks/`, `/api/rooms/`, `/api/professors/`, `/api/schedule-entries/`.
 
-If you want I can add a data-migration to convert legacy `CourseOffering` rows into `Curriculum` links.
+Testing & maintenance
+- Run backend tests: `python manage.py test`.
+- After model changes: `python manage.py makemigrations` and `python manage.py migrate`.
+
+If you want, I can add a migration to convert legacy `CourseOffering` rows into `Curriculum` links or remove other deprecated UI elements.
 EXPECTED SITE FLOW
 
 User opens system
