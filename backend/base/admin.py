@@ -14,7 +14,6 @@ from .models import (
 	Course,
 	CourseOffering,
 	Curriculum,
-	YearLevel,
 	Professor,
 	Student,
 	ScheduleEntry,
@@ -81,10 +80,6 @@ class CourseOfferingAdmin(admin.ModelAdmin):
 class CurriculumAdmin(admin.ModelAdmin):
 	list_display = ('name', 'sub_department')
 
-
-@admin.register(YearLevel)
-class YearLevelAdmin(admin.ModelAdmin):
-	list_display = ('name', 'curriculum')
 
 
 @admin.register(Professor)

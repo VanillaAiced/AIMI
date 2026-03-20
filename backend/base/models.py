@@ -154,13 +154,7 @@ class Curriculum(models.Model):
 		return self.name
 
 
-class YearLevel(models.Model):
-	name = models.CharField(max_length=200)
-	curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, related_name='year_levels')
-	blocks = models.ManyToManyField(Block, blank=True, related_name='year_levels')
-
-	def __str__(self):
-		return f"{self.curriculum.name} - {self.name}"
+# YearLevel model removed: handled via migrations when deleting from DB
 
 
 # Professors
