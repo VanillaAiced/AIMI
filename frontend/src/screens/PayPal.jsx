@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert } from 'react-bootstrap';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
-const PayPal = ({ amount = '29.99', onSuccess, onError, onCancel }) => {
+const PayPal = ({ amount = '5.99', onSuccess, onError, onCancel }) => {
 	const clientId = process.env.REACT_APP_PAYPAL_CLIENT_ID;
 
 	if (!clientId) {

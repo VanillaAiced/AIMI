@@ -55,7 +55,7 @@ const PaymentScreen = () => {
               <Card className="mb-4 bg-light">
                 <Card.Body>
                   <h4 className="mb-3">Schedule Generation Service</h4>
-                  <h2 className="text-primary mb-3">$29.99</h2>
+                  <h2 className="text-primary mb-3">$5.99</h2>
                   <ul className="text-start" style={{ display: 'inline-block' }}>
                     <li>Automated schedule generation</li>
                     <li>Conflict detection & resolution</li>
@@ -74,7 +74,7 @@ const PaymentScreen = () => {
 
               <div className="mb-3">
                 <PayPal
-                  amount="29.99"
+                  amount="5.99"
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}
                   onCancel={handlePaymentCancel}
