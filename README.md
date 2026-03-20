@@ -1,3 +1,34 @@
+# AIMI — Academic Timetabling
+
+This repository is a Django backend and React frontend application for managing academic resources and generating course schedules.
+
+Quick start
+1. Backend (Python/Django)
+	- Create and activate a virtualenv (Python 3.11+ recommended).
+	- Install dependencies: `pip install -r requirements.txt`.
+	- Apply migrations: `python manage.py migrate`.
+	- (Optional) Create a superuser: `python manage.py createsuperuser`.
+	- Run dev server: `python manage.py runserver`.
+
+2. Frontend (React)
+	- Install node deps: `cd frontend && npm install`.
+	- Run dev server: `npm start` (in `frontend`)
+	- Create production build: `npm run build` (outputs to `frontend/build`)
+
+API notes / recent changes
+- The legacy `CourseOffering` model and `/api/course-offerings/` endpoint were removed. Use `curricula` to link `course`s to `block`s instead.
+- The `YearLevel` model was removed from the code and database.
+- `Professor.availability` was removed; professors are assumed available by default.
+- Scheduler: POST `/api/schedule-entries/generate/` triggers schedule generation. The scheduler enforces hard constraints (no overlaps for block/professor/room; room & professor requirements; duration & frequency) and applies optional heuristics (avoid very early/late, reduce gaps, prioritize higher-unit courses).
+
+Testing
+- Run backend tests: `python manage.py test` (from `backend` folder).
+
+Troubleshooting
+- If frontend still references removed endpoints, rebuild the frontend: `cd frontend && npm run build`.
+- After model changes, run `python manage.py makemigrations` and `python manage.py migrate`.
+
+If you want I can add a data-migration to convert legacy `CourseOffering` rows into `Curriculum` links.
 EXPECTED SITE FLOW
 
 User opens system
