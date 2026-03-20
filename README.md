@@ -35,6 +35,55 @@ Testing & maintenance
 - After model changes: `python manage.py makemigrations` and `python manage.py migrate`.
 
 If you want, I can add a migration to convert legacy `CourseOffering` rows into `Curriculum` links or remove other deprecated UI elements.
+
+Data Model
+
+| Model | Key fields | Relations |
+|---|---|---|
+| School | `name` | has many `Department` |
+| Department | `name` | FK -> `School`; has many `SubDepartment` |
+| SubDepartment | `name`, `number` | FK -> `Department`; has many `Block`, `Curriculum` |
+| Block | `code`, `year` | FK -> `SubDepartment`; referenced by `Curriculum` (M2M) and `ScheduleEntry` |
+| Curriculum | `name` | FK -> `SubDepartment`; M2M -> `Course`; M2M -> `Block` (used to assign courses to blocks)
+| Course | `name`, `code`, `duration_minutes`, `frequency_per_week`, `units` | M2M -> `Curriculum` (a course can appear in multiple curricula)
+| Professor | `name`, `user` (opt), `email`, `department`, `sub_department`, `max_units` | FK -> `Department` / `SubDepartment`; referenced by `ScheduleEntry` |
+| Student | `user`, `department`, `sub_department`, `year`, `block` | FK -> `Block`; used for student views |
+| Building | `name` | has many `Room` |
+| RoomType | `name` | referenced by `Room` |
+| Room | `building`, `number`, `floor`, `room_type`, `capacity` | FK -> `Building`, `RoomType`; used by `ScheduleEntry` |
+| TimeSlot | `day`, `start_time`, `end_time` | used by `ScheduleEntry` to represent a scheduled slot |
+| ScheduleEntry | (generated) `course`, `block`, `professor`, `room`, `time_slot` | Represents one scheduled class session (result of scheduler)
+| Profile | `user`, `role`, `department`, `sub_department`, `year`, `block` | One-to-one with auth `User`; stores authoritative role info
+
+Notes
+- The legacy `CourseOffering` model and `/api/course-offerings/` endpoint have been removed; use `Curriculum` to link `Course` <-> `Block`.
+- The `YearLevel` model was removed — curricula and blocks cover course grouping by year.
+- `ScheduleEntry` rows are created by the scheduler and represent assigned sessions (no separate `CourseOffering` is required).
+
+Data Model Diagram
+
+```mermaid
+graph LR
+  School --> Department
+  Department --> SubDepartment
+  SubDepartment --> Block
+  SubDepartment --> Curriculum
+  Curriculum -->|M:N| Course
+  Curriculum -->|M:N| Block
+  Course --> ScheduleEntry
+  Block --> ScheduleEntry
+  Professor --> ScheduleEntry
+  Room --> ScheduleEntry
+  TimeSlot --> ScheduleEntry
+  Building --> Room
+  RoomType --> Room
+  Student --> Block
+  Profile --> User
+
+  classDef model fill:#f9f,stroke:#333,stroke-width:1px;
+  class School,Department,SubDepartment,Block,Curriculum,Course,Professor,Student,Building,RoomType,Room,TimeSlot,ScheduleEntry,Profile,User model;
+```
+
 EXPECTED SITE FLOW
 
 User opens system
