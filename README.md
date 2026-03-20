@@ -34,7 +34,7 @@ Testing & maintenance
 - Run backend tests: `python manage.py test`.
 - After model changes: `python manage.py makemigrations` and `python manage.py migrate`.
 
-If you want, I can add a migration to convert legacy `CourseOffering` rows into `Curriculum` links or remove other deprecated UI elements.
+A migration can be added to convert legacy `CourseOffering` rows into `Curriculum` links or to remove deprecated UI elements.
 
 Data Model
 
@@ -55,10 +55,27 @@ Data Model
 | ScheduleEntry | (generated) `course`, `block`, `professor`, `room`, `time_slot` | Represents one scheduled class session (result of scheduler)
 | Profile | `user`, `role`, `department`, `sub_department`, `year`, `block` | One-to-one with auth `User`; stores authoritative role info
 
-Notes
-- The legacy `CourseOffering` model and `/api/course-offerings/` endpoint have been removed; use `Curriculum` to link `Course` <-> `Block`.
-- The `YearLevel` model was removed — curricula and blocks cover course grouping by year.
-- `ScheduleEntry` rows are created by the scheduler and represent assigned sessions (no separate `CourseOffering` is required).
+
+Scheduler algorithm and restrictions
+
+- Overview: the scheduler is a greedy heuristic that builds scheduling "offerings" by pairing `Course` and `Block` via `Curriculum` entries, then assigns `TimeSlot`s, `Room`s and `Professor`s for each required session.
+- Hard constraints (always enforced):
+  - No overlapping sessions for the same Block, Professor, or Room.
+  - Room must satisfy the Course's `room_requirement` (if set).
+  - Professor must satisfy the Course's `professor_requirement` (if set) unless `allow_any_professor` is enabled.
+  - `TimeSlot` duration must be >= course `duration_minutes`.
+  - Each course's `frequency_per_week` determines how many sessions are created.
+- Optional heuristics (scoring used to choose among valid assignments):
+  - Prioritize higher-unit courses first.
+  - Penalize very early (< 8:00) and very late (>= 19:00) start times.
+  - Prefer assignments that reduce long gaps for a Block or a Professor.
+  - Prefer spreading sessions across different days for the same course+block.
+- Notes & limitations:
+  - The algorithm is greedy and heuristic-driven; it does not guarantee a globally optimal schedule.
+  - For complex constraints or large datasets, consider a constraint solver or optimization backend.
+  - Generated schedule rows are stored in `ScheduleEntry`.
+  - Trigger scheduling via API: `POST /api/schedule-entries/generate/`.
+  - Heuristics and thresholds are defined in `backend/base/scheduler.py` and can be tuned.
 
 Data Model Diagram
 
