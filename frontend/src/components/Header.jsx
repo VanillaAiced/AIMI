@@ -48,6 +48,11 @@ const Header = ({ user, setUser }) => {
                   <i className="fas fa-home"></i> Home
                 </Nav.Link>
               </LinkContainer>
+              <LinkContainer to="/payment">
+                <Nav.Link>
+                  <i className="fab fa-paypal"></i> Subscription
+                </Nav.Link>
+              </LinkContainer>
               {user ? (
                 <>
                   <Nav.Link onClick={()=>{

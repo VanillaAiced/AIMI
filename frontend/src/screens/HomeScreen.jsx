@@ -29,6 +29,7 @@ const HomeScreen = () => {
                 variant="primary" 
                 size="lg" 
                 onClick={handleStart}
+                className="me-2"
               >
                 Start Scheduling
               </Button>

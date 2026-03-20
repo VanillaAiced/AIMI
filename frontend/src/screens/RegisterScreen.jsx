@@ -22,6 +22,7 @@ const RegisterScreen = ({ setUser }) => {
   
   const navigate = useNavigate();
   const { notify } = useNotification();
+  const hasDepartmentData = departments.length > 0;
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -29,23 +30,23 @@ const RegisterScreen = ({ setUser }) => {
     if (password !== confirm) return notify({ text: 'Passwords do not match', variant: 'danger' });
 
     // role-specific validation
-    if (role === 'student') {
+    if (role === 'student' && hasDepartmentData) {
       if (!department) return notify({ text: 'Please select a Department', variant: 'danger' });
       if (!subDepartment) return notify({ text: 'Please select a Sub-Department', variant: 'danger' });
       if (!yearLevel) return notify({ text: 'Please select a Year Level', variant: 'danger' });
       if (!blockCode) return notify({ text: 'Please select a Block', variant: 'danger' });
-    } else if (role === 'professor') {
+    } else if (role === 'professor' && hasDepartmentData) {
       if (!department) return notify({ text: 'Please select a Department', variant: 'danger' });
       if (!subDepartment) return notify({ text: 'Please select a Sub-Department', variant: 'danger' });
     }
     try {
       const payload = { name, username: username || email, email, password, role };
-        if (role === 'student') {
+        if (role === 'student' && hasDepartmentData) {
         payload.department = department;
         payload.sub_department = subDepartment;
         payload.year = yearLevel;
         payload.block = blockCode;
-      } else if (role === 'professor') {
+        } else if (role === 'professor' && hasDepartmentData) {
         payload.department = department;
         payload.sub_department = subDepartment;
       }
@@ -149,16 +150,21 @@ const RegisterScreen = ({ setUser }) => {
 
               {role === 'student' && (
                 <>
+                  {!hasDepartmentData && (
+                    <p className="text-muted small mb-2">
+                      Department setup is empty right now. You can still register; admin can assign academic details later.
+                    </p>
+                  )}
                   <Form.Group className="my-2">
                     <Form.Label>Department</Form.Label>
-                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)}>
+                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)} disabled={!hasDepartmentData}>
                       <option value="">-- Select Department --</option>
                       {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="my-2">
                     <Form.Label>Sub-Department</Form.Label>
-                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)}>
+                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)} disabled={!hasDepartmentData}>
                       <option value="">-- Select Sub-Department --</option>
                       {subdepartments.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
                     </Form.Select>
@@ -174,7 +180,7 @@ const RegisterScreen = ({ setUser }) => {
                   </Form.Group>
                   <Form.Group className="my-2">
                     <Form.Label>Block</Form.Label>
-                    <Form.Select value={blockCode} onChange={(e)=>setBlockCode(e.target.value)}>
+                    <Form.Select value={blockCode} onChange={(e)=>setBlockCode(e.target.value)} disabled={!hasDepartmentData}>
                       <option value="">-- Select Block --</option>
                       {blocks.map(b=> <option key={b.id} value={b.id}>{b.code}</option>)}
                     </Form.Select>
@@ -185,16 +191,21 @@ const RegisterScreen = ({ setUser }) => {
 
               {role === 'professor' && (
                 <>
+                  {!hasDepartmentData && (
+                    <p className="text-muted small mb-2">
+                      Department setup is empty right now. You can still register; admin can assign academic details later.
+                    </p>
+                  )}
                   <Form.Group className="my-2">
                     <Form.Label>Department</Form.Label>
-                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)}>
+                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)} disabled={!hasDepartmentData}>
                       <option value="">-- Select Department --</option>
                       {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="my-2">
                     <Form.Label>Sub-Department</Form.Label>
-                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)}>
+                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)} disabled={!hasDepartmentData}>
                       <option value="">-- Select Sub-Department --</option>
                       {subdepartments.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
                     </Form.Select>
