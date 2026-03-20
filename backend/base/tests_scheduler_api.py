@@ -19,8 +19,10 @@ class SchedulerTests(TestCase):
         block = models.Block.objects.create(code='CPE-101', sub_department=sub, year=1)
         course = models.Course.objects.create(name='Datastalgo', code='DATASTALGO', duration_minutes=90, frequency_per_week=1, units=3)
         prof = models.Professor.objects.create(name='Prof X')
-        # offering
-        models.CourseOffering.objects.create(course=course, assigned_block=block, assigned_professor=prof)
+        # assign course to block via curriculum
+        curr = models.Curriculum.objects.create(name='C1', sub_department=sub)
+        curr.courses.add(course)
+        curr.blocks.add(block)
 
     def test_scheduler_creates_entries(self):
         before = models.ScheduleEntry.objects.count()
@@ -33,6 +35,9 @@ class SchedulerTests(TestCase):
 class APIGenerationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='apiuser', password='pass')
+        # make API user an admin so they can create resources in tests
+        self.user.is_staff = True
+        self.user.save()
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
@@ -55,8 +60,9 @@ class APIGenerationTests(TestCase):
         block = self.client.post('/api/blocks/', {'code': 'CPE-101', 'sub_department': sub.data['id'], 'year': 1}, format='json')
         course = self.client.post('/api/courses/', {'name': 'Datastalgo', 'code': 'DATASTALGO', 'duration_minutes': 90, 'frequency_per_week': 1, 'units': 3}, format='json')
         prof = self.client.post('/api/professors/', {'name': 'Prof API'}, format='json')
-        offering = self.client.post('/api/course-offerings/', {'course': course.data['id'], 'assigned_block': block.data['id'], 'assigned_professor': prof.data['id']}, format='json')
-        self.assertEqual(offering.status_code, 201)
+        # create curriculum linking course and block
+        curr = self.client.post('/api/curricula/', {'name': 'C1', 'sub_department': sub.data['id'], 'courses': [course.data['id']], 'blocks': [block.data['id']]}, format='json')
+        self.assertEqual(curr.status_code, 201)
 
         # trigger generation
         gen = self.client.post('/api/schedule-entries/generate/', {}, format='json')

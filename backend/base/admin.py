@@ -12,7 +12,6 @@ from .models import (
 	Room,
 	TimeSlot,
 	Course,
-	CourseOffering,
 	Curriculum,
 	Professor,
 	Student,
@@ -68,13 +67,6 @@ class TimeSlotAdmin(admin.ModelAdmin):
 class CourseAdmin(admin.ModelAdmin):
 	list_display = ('code', 'name', 'units', 'duration_minutes', 'frequency_per_week')
 	search_fields = ('code', 'name')
-
-
-@admin.register(CourseOffering)
-class CourseOfferingAdmin(admin.ModelAdmin):
-	list_display = ('name', 'course', 'assigned_block', 'assigned_professor')
-	search_fields = ('name',)
-
 
 @admin.register(Curriculum)
 class CurriculumAdmin(admin.ModelAdmin):
@@ -141,5 +133,5 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(ScheduleEntry)
 class ScheduleEntryAdmin(admin.ModelAdmin):
-	list_display = ('course_offering', 'course', 'block', 'professor', 'room', 'time_slot')
+	list_display = ('course', 'block', 'professor', 'room', 'time_slot')
 	search_fields = ('course__code', 'course__name')

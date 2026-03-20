@@ -89,9 +89,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 
 class CourseOfferingViewSet(viewsets.ModelViewSet):
-    queryset = models.CourseOffering.objects.all()
-    serializer_class = serializers.CourseOfferingSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    pass
 
 
 class CurriculumViewSet(viewsets.ModelViewSet):

@@ -75,7 +75,6 @@ def data_view(request):
 		if not name:
 			continue
 		defaults = {
-			'availability': p.get('availability', ''),
 			'owner_session': owner,
 		}
 		obj, created_flag = Professor.objects.update_or_create(name=name, defaults=defaults)
@@ -193,7 +192,7 @@ def signup_view(request):
 				try:
 					from .models import Professor
 					prof_defaults = {
-						'availability': '',
+						# availability removed: professors are assumed always available
 						'department': profile.department,
 						'sub_department': profile.sub_department,
 						'email': user.email,

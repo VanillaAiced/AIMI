@@ -148,9 +148,6 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     assigned_block = serializers.PrimaryKeyRelatedField(queryset=models.Block.objects.all())
     assigned_professor = serializers.PrimaryKeyRelatedField(queryset=models.Professor.objects.all(), allow_null=True, required=False)
 
-    class Meta:
-        model = models.CourseOffering
-        fields = '__all__'
 
     def validate(self, data):
         # ensure frequency and duration make sense on the related course
