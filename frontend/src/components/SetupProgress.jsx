@@ -11,13 +11,21 @@ const SetupProgress = ({ onStatus }) => {
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const [deps, bds, cs, profs, users] = await Promise.all([
-          fetch('/api/departments/'), fetch('/api/buildings/'), fetch('/api/courses/'), fetch('/api/professors/'), fetch('/api/admin/users/', { headers })
+        // fetch curricula (replaces former course-offerings), plus core models
+        const [deps, bds, cs, curricula, profs, users] = await Promise.all([
+          fetch('/api/departments/'), fetch('/api/buildings/'), fetch('/api/courses/'), fetch('/api/curricula/'), fetch('/api/professors/'), fetch('/api/admin/users/', { headers })
         ]);
         const res = {};
         if (deps.ok) res.departments = (await deps.json()).length;
         if (bds.ok) res.buildings = (await bds.json()).length;
         if (cs.ok) res.courses = (await cs.json()).length;
+        // map curricula -> offerings for compatibility with existing screens
+        if (curricula.ok) {
+          const cj = await curricula.json();
+          const cl = Array.isArray(cj) ? cj : (cj.results || []);
+          res.curricula = cl.length;
+          res.offerings = cl.length; // keep `offerings` key for legacy checks
+        }
         if (profs.ok) {
           const pjson = await profs.json();
           const p = Array.isArray(pjson) ? pjson : (pjson.results || pjson);
@@ -53,6 +61,7 @@ const SetupProgress = ({ onStatus }) => {
             <ListGroup.Item>Departments: {counts.departments}</ListGroup.Item>
             <ListGroup.Item>Buildings: {counts.buildings}</ListGroup.Item>
             <ListGroup.Item>Courses: {counts.courses}</ListGroup.Item>
+            <ListGroup.Item>Curricula: {counts.curricula || counts.offerings || 0}</ListGroup.Item>
             
             <ListGroup.Item>Professors: {counts.professors}</ListGroup.Item>
             <ListGroup.Item>Students: {counts.students}</ListGroup.Item>
