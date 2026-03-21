@@ -25,21 +25,19 @@ const NotificationProvider = ({ children }) => {
     <NotificationContext.Provider value={{ notify }}>
       {children}
 
-      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 1060 }}>
-        <ToastContainer position="top-end">
-          {notes.map(n => (
-            <Toast 
-              key={n.id} 
-              onClose={() => remove(n.id)} 
-              bg={n.variant} 
-              autohide 
-              delay={n.timeout || 4000}
-            >
-              <Toast.Body style={{ color: n.variant === 'light' ? '#000' : '#fff' }}>{n.text}</Toast.Body>
-            </Toast>
-          ))}
-        </ToastContainer>
-      </div>
+      <ToastContainer position="top-end" className="p-3" style={{ position: 'fixed', top: 0, right: 0, zIndex: 1050 }}>
+        {notes.map(n => (
+          <Toast 
+            key={n.id} 
+            onClose={() => remove(n.id)} 
+            bg={n.variant} 
+            autohide 
+            delay={n.timeout || 4000}
+          >
+            <Toast.Body style={{ color: n.variant === 'light' ? '#000' : '#fff' }}>{n.text}</Toast.Body>
+          </Toast>
+        ))}
+      </ToastContainer>
     </NotificationContext.Provider>
   );
 };

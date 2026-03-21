@@ -57,8 +57,20 @@ const RegisterScreen = ({ setUser }) => {
         body: JSON.stringify(payload),
       });
       if (!resp.ok) {
-        const text = await resp.text();
-        return notify({ text: 'Signup failed: ' + text, variant: 'danger' });
+        const contentType = resp.headers.get('content-type');
+        let errorMsg = `Signup failed (${resp.status})`;
+        try {
+          if (contentType?.includes('application/json')) {
+            const json = await resp.json();
+            errorMsg = json.detail || json.message || errorMsg;
+          } else {
+            const text = await resp.text();
+            errorMsg = text || errorMsg;
+          }
+        } catch (parseErr) {
+          // If we can't parse the error, just use status
+        }
+        return notify({ text: errorMsg, variant: 'danger' });
       }
       const json = await resp.json();
       // store tokens and set user
@@ -75,7 +87,7 @@ const RegisterScreen = ({ setUser }) => {
       else if (serverRole === 'professor') setTimeout(() => navigate('/professor'), 700);
       else setTimeout(() => navigate('/student'), 700);
     } catch (err) {
-      notify({ text: 'Signup error: ' + err.message, variant: 'danger' });
+      notify({ text: 'Signup error: ' + (err.message || 'Unknown error'), variant: 'danger' });
     }
   };
 
