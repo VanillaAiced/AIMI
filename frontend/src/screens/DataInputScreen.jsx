@@ -277,6 +277,7 @@ const DataInputScreen = () => {
                         <th>Block</th>
                         <th>Units</th>
                         <th>Hours</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -287,7 +288,7 @@ const DataInputScreen = () => {
                           <td>{sub.block}</td>
                           <td>{sub.units}</td>
                           <td>{sub.hours}</td>
-                          <td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
                             <Button size="sm" variant="outline-primary" onClick={()=>editSubject(sub.id)}>Edit</Button>{' '}
                             <Button size="sm" variant="outline-danger" onClick={()=>deleteSubject(sub.id)}>Delete</Button>
                           </td>
@@ -339,6 +340,7 @@ const DataInputScreen = () => {
                       <tr>
                         <th>Name</th>
                         <th>Availability</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -346,7 +348,7 @@ const DataInputScreen = () => {
                         <tr key={prof.id}>
                           <td>{prof.name}</td>
                           <td>{prof.availability}</td>
-                          <td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
                             <Button size="sm" variant="outline-primary" onClick={()=>editProfessor(prof.id)}>Edit</Button>{' '}
                             <Button size="sm" variant="outline-danger" onClick={()=>deleteProfessor(prof.id)}>Delete</Button>
                           </td>
@@ -403,6 +405,7 @@ const DataInputScreen = () => {
                         <th>Room</th>
                         <th>Capacity</th>
                         <th>Type</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -411,7 +414,7 @@ const DataInputScreen = () => {
                           <td>{room.name}</td>
                           <td>{room.capacity}</td>
                           <td>{room.type}</td>
-                          <td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
                             <Button size="sm" variant="outline-primary" onClick={()=>editRoom(room.id)}>Edit</Button>{' '}
                             <Button size="sm" variant="outline-danger" onClick={()=>deleteRoom(room.id)}>Delete</Button>
                           </td>
@@ -477,6 +480,7 @@ const DataInputScreen = () => {
                         <th>Section</th>
                         <th>Department</th>
                         <th>Year</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -485,7 +489,7 @@ const DataInputScreen = () => {
                           <td>{sec.name}</td>
                           <td>{sec.department}</td>
                           <td>{sec.yearLevel}</td>
-                          <td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
                             <Button size="sm" variant="outline-primary" onClick={()=>editSection(sec.id)}>Edit</Button>{' '}
                             <Button size="sm" variant="outline-danger" onClick={()=>deleteSection(sec.id)}>Delete</Button>
                           </td>
