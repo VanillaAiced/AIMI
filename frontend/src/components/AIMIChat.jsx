@@ -8,14 +8,19 @@ const AIMIChat = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      setTimeout(() => {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }, 0);
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, loading]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -24,6 +29,7 @@ const AIMIChat = () => {
 
     // Add user message
     const userMsg = { role: 'user', content: input };
+    const messageContent = input; // Save before clearing
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
@@ -37,7 +43,7 @@ const AIMIChat = () => {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          message: input,
+          message: messageContent,
           history: messages.map(m => ({ role: m.role, content: m.content }))
         })
       });
@@ -77,7 +83,7 @@ const AIMIChat = () => {
         <small className="d-block mt-1">Ask me anything about your schedule</small>
       </Card.Header>
       
-      <ListGroup variant="flush" style={{ flex: 1, overflowY: 'auto', maxHeight: '400px' }}>
+      <ListGroup variant="flush" ref={messagesContainerRef} style={{ flex: 1, overflowY: 'auto', maxHeight: '400px' }}>
         {messages.map((msg, idx) => (
           <ListGroup.Item key={idx} className={msg.role === 'user' ? 'bg-light' : ''}>
             <div className="mb-1">
@@ -104,7 +110,6 @@ const AIMIChat = () => {
             <small>AIMI is thinking...</small>
           </ListGroup.Item>
         )}
-        <div ref={messagesEndRef} />
       </ListGroup>
 
       <Card.Footer>

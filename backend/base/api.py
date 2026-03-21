@@ -313,18 +313,27 @@ class AIMIOptimizeView(APIView):
 
 class AIMIChatView(APIView):
     """AIMI - Chat Interface for Schedule Discussions"""
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []  # Allow unauthenticated access for now
     
     def post(self, request):
         """Send a message to AIMI"""
-        message = request.data.get('message', '').strip()
-        history = request.data.get('history', [])
-        
-        if not message:
+        try:
+            message = request.data.get('message', '').strip()
+            history = request.data.get('history', [])
+            
+            if not message:
+                return Response({
+                    'success': False,
+                    'error': 'Message cannot be empty'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            result = AIScheduleAssistant.chat_about_schedule(message, history)
+            return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in AIMIChatView.post: {type(e).__name__}: {str(e)}", exc_info=True)
             return Response({
                 'success': False,
-                'error': 'Message cannot be empty'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        result = AIScheduleAssistant.chat_about_schedule(message, history)
-        return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)
+                'error': f'Server error: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

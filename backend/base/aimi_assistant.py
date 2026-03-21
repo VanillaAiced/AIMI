@@ -39,7 +39,7 @@ else:
 class AIScheduleAssistant:
     """AIMI Schedule Assistant using Gemini API"""
     
-    MODEL = "gemini-1.5-flash"
+    MODEL = "gemini-2.5-flash"  # Latest and fast model
     
     @staticmethod
     def get_schedule_context():
@@ -171,33 +171,35 @@ Format your response as JSON with this structure:
         
         try:
             schedule_data = AIScheduleAssistant.get_schedule_data_for_analysis()
+            logger.info(f"Chat request - Message: {user_message}")
             
             # System prompt to restrict responses to schedule only
-            system_prompt = """You are AIMI, an AI Schedule Assistant for academic institutions. 
-            You ONLY help with schedule optimization, rescheduling, and related questions.
+            system_prompt = f"""You are AIMI, an AI Schedule Assistant for academic institutions. 
+You ONLY help with schedule optimization, rescheduling, and related questions.
+
+Current schedule data:
+{json.dumps(schedule_data, indent=2)}
+
+For any question NOT related to schedules, respond with:
+"I'm AIMI, the Schedule Assistant. I can only help with schedule-related questions. How can I help you optimize your academic schedule?"
+
+For schedule-related questions, provide specific, actionable advice based on the schedule data provided."""
             
-            For any question NOT related to schedules, respond with:
-            "I'm AIMI, the Schedule Assistant. I can only help with schedule-related questions. How can I help you optimize your academic schedule?"
-            
-            For schedule-related questions, provide specific, actionable advice based on the schedule data provided."""
-            
-            # Build conversation with history
-            messages = [
-                {"role": "user", "content": f"Schedule context:\n{json.dumps(schedule_data)}\n\nSystem: {system_prompt}"}
-            ]
-            
+            # Build prompt with history
+            prompt_text = system_prompt
             if conversation_history:
-                messages.extend(conversation_history)
+                for msg in conversation_history:
+                    role = "Assistant" if msg.get('role') == 'aimi' else "User"
+                    prompt_text += f"\n\n{role}: {msg.get('content', '')}"
             
-            messages.append({
-                "role": "user",
-                "content": user_message
-            })
+            prompt_text += f"\n\nUser: {user_message}\n\nAssistant:"
             
+            logger.info(f"Sending prompt to Gemini API (length: {len(prompt_text)})")
             model = genai.GenerativeModel(AIScheduleAssistant.MODEL)
-            response = model.generate_content(messages)
+            response = model.generate_content(prompt_text)
             
-            ai_response = response.text
+            ai_response = response.text.strip()
+            logger.info(f"Gemini response received: {ai_response[:100]}")
             
             # Check if response is the non-schedule response
             if "I'm AIMI, the Schedule Assistant" in ai_response:
@@ -214,5 +216,5 @@ Format your response as JSON with this structure:
             }
             
         except Exception as e:
-            logger.error(f"Error in chat: {e}")
+            logger.error(f"Error in chat: {type(e).__name__}: {str(e)}", exc_info=True)
             return {'success': False, 'error': f"Failed to get response: {str(e)}"}
