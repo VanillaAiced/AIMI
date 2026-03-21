@@ -70,9 +70,10 @@ const AIMIChat = () => {
   return (
     <Card className="h-100" style={{ display: 'flex', flexDirection: 'column' }}>
       <Card.Header className="bg-primary text-white">
-        <strong style={{ fontSize: '1.1em' }}>
-          <span style={{ color: '#00ffff' }}>AIMI</span> Schedule Assistant
-        </strong>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src="/images/aimi-logo.png" alt="AIMI" style={{ height: '24px', width: '24px' }} />
+          <strong style={{ fontSize: '1.1em' }}>AIMI Schedule Assistant</strong>
+        </div>
         <small className="d-block mt-1">Ask me anything about your schedule</small>
       </Card.Header>
       
@@ -80,9 +81,14 @@ const AIMIChat = () => {
         {messages.map((msg, idx) => (
           <ListGroup.Item key={idx} className={msg.role === 'user' ? 'bg-light' : ''}>
             <div className="mb-1">
-              <strong className={msg.role === 'user' ? 'text-primary' : 'text-info'}>
-                {msg.role === 'user' ? 'You' : '🤖 AIMI'}
-              </strong>
+              {msg.role === 'user' ? (
+                <strong className="text-primary">You</strong>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <img src="/images/aimi-logo.png" alt="AIMI" style={{ height: '16px', width: '16px' }} />
+                  <strong className="text-info">AIMI</strong>
+                </div>
+              )}
               {msg.isScheduleRelated === false && (
                 <small className="ms-2 text-muted">(off-topic)</small>
               )}
@@ -112,12 +118,13 @@ const AIMIChat = () => {
               placeholder="Ask AIMI about your schedule..."
               disabled={loading}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.ctrlKey) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
                   handleSendMessage(e);
                 }
               }}
             />
-            <small className="text-muted">Ctrl+Enter to send</small>
+            <small className="text-muted">Press Enter to send, Shift+Enter for new line</small>
           </Form.Group>
           <Button
             variant="primary"
@@ -131,7 +138,7 @@ const AIMIChat = () => {
                 Sending...
               </>
             ) : (
-              'Send Message'
+              'Send'
             )}
           </Button>
         </Form>

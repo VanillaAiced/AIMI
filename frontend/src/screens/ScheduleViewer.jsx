@@ -65,10 +65,11 @@ const ScheduleViewer = ()=>{
         </Col>
         <Col md={6} className="text-end">
           <Button size="sm" variant="info" className="me-2" onClick={() => setShowAIMIChat(!showAIMIChat)}>
-            🤖 AIMI Chat
+            <img src="/images/aimi-logo.png" alt="AIMI" style={{ height: '14px', width: '14px', marginRight: '4px' }} />
+            AIMI Chat
           </Button>
           <Button size="sm" variant="success" onClick={() => setShowAIMIModal(true)}>
-            ✨ AI Optimize
+            ✨ AI-PTIMIZE
           </Button>
         </Col>
       </Row>

@@ -42,7 +42,8 @@ const AIMISuggestionsModal = ({ show, onHide, onApplySuggestion }) => {
     <Modal size="lg" show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
         <Modal.Title>
-          <span style={{ color: '#0066ff', fontWeight: 'bold' }}>AIMI</span> Schedule Optimization
+          <img src="/images/aimi-logo.png" alt="AIMI" style={{ height: '24px', width: '24px', marginRight: '8px' }} />
+          <span style={{ fontWeight: 'bold' }}>AIMI</span> Schedule Optimization
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>

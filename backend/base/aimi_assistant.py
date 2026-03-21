@@ -5,14 +5,35 @@ Handles schedule optimization and advice using Google Gemini API
 
 import os
 import json
-import google.generativeai as genai
+import logging
 from django.conf import settings
 from . import models
 
-# Configure Gemini
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+logger = logging.getLogger(__name__)
+
+# Try to import and configure Gemini
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    logger.warning("google.generativeai not installed")
+
+# Get API key from environment
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') or getattr(settings, 'GEMINI_API_KEY', None)
+
+if GEMINI_API_KEY and GEMINI_AVAILABLE:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        logger.info("Gemini API configured successfully")
+    except Exception as e:
+        logger.error(f"Failed to configure Gemini API: {e}")
+        GEMINI_API_KEY = None
+else:
+    if not GEMINI_API_KEY:
+        logger.warning("GEMINI_API_KEY not found in environment")
+    if not GEMINI_AVAILABLE:
+        logger.warning("google.generativeai package not available")
 
 
 class AIScheduleAssistant:
@@ -64,10 +85,10 @@ class AIScheduleAssistant:
         Analyze current schedule and suggest optimizations
         Returns AI-suggested improvements
         """
-        if not GEMINI_API_KEY:
+        if not GEMINI_API_KEY or not GEMINI_AVAILABLE:
             return {
                 'success': False,
-                'error': 'Gemini API key not configured. Set GEMINI_API_KEY environment variable.'
+                'error': 'Gemini API is not configured. Please set GEMINI_API_KEY environment variable.'
             }
         
         try:
@@ -133,7 +154,8 @@ Format your response as JSON with this structure:
                 return {'success': True, 'suggestions': {'summary': response_text}}
                 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            logger.error(f"Error analyzing schedule: {e}")
+            return {'success': False, 'error': f"Failed to analyze schedule: {str(e)}"}
     
     @staticmethod
     def chat_about_schedule(user_message: str, conversation_history: list = None):
@@ -141,10 +163,10 @@ Format your response as JSON with this structure:
         Chat with AIMI about schedule optimization
         Only responds to schedule-related queries
         """
-        if not GEMINI_API_KEY:
+        if not GEMINI_API_KEY or not GEMINI_AVAILABLE:
             return {
                 'success': False,
-                'error': 'Gemini API key not configured.'
+                'error': 'Gemini API is not configured. Please set GEMINI_API_KEY environment variable.'
             }
         
         try:
@@ -192,4 +214,5 @@ Format your response as JSON with this structure:
             }
             
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            logger.error(f"Error in chat: {e}")
+            return {'success': False, 'error': f"Failed to get response: {str(e)}"}
