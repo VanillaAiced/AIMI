@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Alert, Form } from 'react-bootstrap';
+import { Table, Button, Alert, Form, Row, Col } from 'react-bootstrap';
+import AIMISuggestionsModal from '../components/AIMISuggestionsModal';
+import AIMIChat from '../components/AIMIChat';
 
 const ScheduleViewer = ()=>{
   const [view, setView] = useState('block');
   const [entries, setEntries] = useState([]);
   const [selectedId, setSelectedId] = useState('');
+  const [showAIMIModal, setShowAIMIModal] = useState(false);
+  const [showAIMIChat, setShowAIMIChat] = useState(false);
 
   useEffect(()=>{ 
     fetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>setEntries(j)).catch(()=>setEntries([])); 
@@ -36,24 +40,50 @@ const ScheduleViewer = ()=>{
     return false;
   }) : [];
 
+  const handleApplySuggestion = (proposal) => {
+    // This would implement the proposal changes
+    // For now, show a notification
+    alert(`Proposal: ${proposal.title}\n\nChanges:\n${proposal.changes?.map(c => `${c.from} → ${c.to}`).join('\n')}`);
+  };
+
   return (<div>
     <h3>Schedule Viewer</h3>
+    
     <div className="mb-3">
       <div className="mb-2"><strong>View by:</strong>{' '}
         <Button size="sm" variant={view==='block'? 'primary': 'secondary'} onClick={()=> {setView('block'); setSelectedId('');}} >BLOCK</Button>{' '}
         <Button size="sm" variant={view==='prof'? 'primary': 'secondary'} onClick={()=> {setView('prof'); setSelectedId('');}} >PROFESSOR</Button>{' '}
         <Button size="sm" variant={view==='room'? 'primary': 'secondary'} onClick={()=> {setView('room'); setSelectedId('');}}>ROOM</Button>
       </div>
-      <div>
-        <Form.Select value={selectedId} onChange={e=>setSelectedId(e.target.value)} className="w-25">
-          <option value="">Select {getLabel(view)}</option>
-          {getOptions().map(opt=><option key={opt.id} value={opt.id}>{opt.name}</option>)}
-        </Form.Select>
-      </div>
+      
+      <Row className="mt-3">
+        <Col md={6}>
+          <Form.Select value={selectedId} onChange={e=>setSelectedId(e.target.value)} className="w-100">
+            <option value="">Select {getLabel(view)}</option>
+            {getOptions().map(opt=><option key={opt.id} value={opt.id}>{opt.name}</option>)}
+          </Form.Select>
+        </Col>
+        <Col md={6} className="text-end">
+          <Button size="sm" variant="info" className="me-2" onClick={() => setShowAIMIChat(!showAIMIChat)}>
+            🤖 AIMI Chat
+          </Button>
+          <Button size="sm" variant="success" onClick={() => setShowAIMIModal(true)}>
+            ✨ AI Optimize
+          </Button>
+        </Col>
+      </Row>
     </div>
+
+    {showAIMIChat && (
+      <div className="mb-3">
+        <AIMIChat />
+      </div>
+    )}
+
     {entries.length === 0 && <Alert variant="info">No schedule data available. Generate a schedule in the Admin Dashboard.</Alert>}
     {entries.length > 0 && !selectedId && <Alert variant="warning">Select a {getLabel(view).toLowerCase()} to view their schedule.</Alert>}
     {entries.length > 0 && selectedId && filteredEntries.length === 0 && <Alert variant="warning">No schedule entries for this {getLabel(view).toLowerCase()}.</Alert>}
+    
     <Table striped hover size="sm">
       <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th></tr></thead>
       <tbody>{filteredEntries.map(e=>(<tr key={e.id}>
@@ -64,6 +94,8 @@ const ScheduleViewer = ()=>{
         <td>{e.professor? e.professor.name: '-'}</td>
       </tr>))}</tbody>
     </Table>
+
+    <AIMISuggestionsModal show={showAIMIModal} onHide={() => setShowAIMIModal(false)} onApplySuggestion={handleApplySuggestion} />
   </div>);
 };
 export default ScheduleViewer;

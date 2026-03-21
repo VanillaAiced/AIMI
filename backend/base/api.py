@@ -288,3 +288,43 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
             'efficiency': int(efficiency_score),
             'insights': insights
         })
+
+
+from rest_framework.views import APIView
+from .aimi_assistant import AIScheduleAssistant
+
+
+class AIMIOptimizeView(APIView):
+    """AIMI - AI Schedule Optimization Endpoint"""
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get(self, request):
+        """Get AI optimization suggestions for current schedule"""
+        issue = request.query_params.get('issue', '')
+        result = AIScheduleAssistant.analyze_schedule_for_optimization(issue or None)
+        return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)
+    
+    def post(self, request):
+        """Post a specific schedule issue for AI analysis"""
+        issue = request.data.get('issue', '')
+        result = AIScheduleAssistant.analyze_schedule_for_optimization(issue)
+        return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)
+
+
+class AIMIChatView(APIView):
+    """AIMI - Chat Interface for Schedule Discussions"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """Send a message to AIMI"""
+        message = request.data.get('message', '').strip()
+        history = request.data.get('history', [])
+        
+        if not message:
+            return Response({
+                'success': False,
+                'error': 'Message cannot be empty'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        result = AIScheduleAssistant.chat_about_schedule(message, history)
+        return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)

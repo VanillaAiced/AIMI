@@ -26,6 +26,9 @@ urlpatterns = [
 	path('auth/me/', views.me_view, name='me'),
 	path('auth/logout/', views.logout_view, name='logout'),
 	path('admin/users/', views.admin_users_view, name='admin_users'),
+	# AIMI Schedule Optimization & Chat
+	path('aimi/optimize-schedule/', api.AIMIOptimizeView.as_view(), name='aimi_optimize'),
+	path('aimi/chat/', api.AIMIChatView.as_view(), name='aimi_chat'),
 	# Router-provided API for CRUD on new models
 	path('', include(router.urls)),
 	# Generic model listing endpoints, e.g. /api/subjects/ or /api/room/
