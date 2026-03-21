@@ -15,7 +15,17 @@ const AIMISuggestionsModal = ({ show, onHide, onApplySuggestion }) => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch('/api/aimi/optimize-schedule/', { headers });
+      // Create abort controller with 60 second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch('/api/aimi/optimize-schedule/', { 
+        headers,
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (!response.ok) throw new Error('Failed to get suggestions');
       
       const data = await response.json();
@@ -25,7 +35,11 @@ const AIMISuggestionsModal = ({ show, onHide, onApplySuggestion }) => {
         setError(data.error || 'Failed to generate suggestions');
       }
     } catch (err) {
-      setError(err.message);
+      if (err.name === 'AbortError') {
+        setError('Request timed out. The AI analysis is taking too long. Please try again.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
