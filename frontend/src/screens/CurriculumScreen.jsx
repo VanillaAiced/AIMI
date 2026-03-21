@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Form, Row, Col, Modal } from 'react-bootstrap';
+import { useNotification } from '../components/NotificationProvider';
 
 const CurriculumScreen = () => {
+  const { notify } = useNotification();
   const ordinal = (n) => {
     const num = Number(n);
     if (isNaN(num)) return n;
@@ -77,7 +79,8 @@ const CurriculumScreen = () => {
         // create curriculum with a sensible default name
         const resp = await fetch('/api/curricula/', { method: 'POST', headers, body: JSON.stringify({ name: 'Curriculum', sub_department: Number(subdeptId) }) });
         if (!resp.ok) {
-          console.error('Failed to create curriculum', await resp.text());
+          const errMsg = await resp.text();
+          notify({ text: `Failed to create curriculum: ${errMsg}`, variant: 'danger' });
           return;
         }
         curriculum = await resp.json();
@@ -90,11 +93,16 @@ const CurriculumScreen = () => {
       if (blocksToLink.length > 0) {
         // update curriculum.blocks via PATCH
         const patch = await fetch(`/api/curricula/${curriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ blocks: blocksToLink }) });
-        if (!patch.ok) { console.error('Failed to attach blocks to curriculum', await patch.text()); }
+        if (!patch.ok) { 
+          const errMsg = await patch.text();
+          notify({ text: `Failed to attach blocks to curriculum: ${errMsg}`, variant: 'danger' });
+          return;
+        }
       }
       setYearSelected('');
+      notify({ text: 'Curriculum updated successfully', variant: 'success' });
     } catch (err) {
-      console.error(err);
+      notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
   };
 
@@ -105,9 +113,16 @@ const CurriculumScreen = () => {
     if (token) headers['Authorization'] = `Bearer ${token}`;
     try {
       const r = await fetch(`/api/curricula/${curriculumId}/`, { method: 'DELETE', headers });
-      if (r.ok) setCurricula(c => c.filter(x => x.id !== curriculumId));
-      else console.error('Failed to delete curriculum', await r.text());
-    } catch (e) { console.error(e); }
+      if (r.ok) {
+        setCurricula(c => c.filter(x => x.id !== curriculumId));
+        notify({ text: 'Curriculum deleted successfully', variant: 'success' });
+      } else {
+        const errMsg = await r.text();
+        notify({ text: `Failed to delete curriculum: ${errMsg}`, variant: 'danger' });
+      }
+    } catch (e) { 
+      notify({ text: `Error: ${e.message}`, variant: 'danger' });
+    }
   };
 
   const handleEdit = async (curr) => {
@@ -263,25 +278,47 @@ const CurriculumScreen = () => {
       <h3>Curricula</h3>
       <Form onSubmit={add} className="mb-3">
         <Row>
-          <Col md={4}>
-            <Form.Select value={deptId} onChange={e=>{ setDeptId(e.target.value); setSubdeptId(''); }} aria-label="Department">
-              <option value="">Select Department</option>
-              {departments.map(d=>(<option key={d.id} value={d.id}>{d.name}</option>))}
-            </Form.Select>
-          </Col>
-          <Col md={4}>
-            <Form.Select value={subdeptId} onChange={e=>setSubdeptId(e.target.value)} aria-label="Sub-department">
-              <option value="">Select Sub-Department</option>
-              {subsForDept.map(s=>(<option key={s.id} value={s.id}>{s.name}</option>))}
-            </Form.Select>
+          <Col md={3}>
+            <Form.Group>
+              <Form.Label>Department</Form.Label>
+              <Form.Select value={deptId} onChange={e=>{ setDeptId(e.target.value); setSubdeptId(''); }} aria-label="Department">
+                <option value="">Select Department</option>
+                {departments.map(d=>(<option key={d.id} value={d.id}>{d.name}</option>))}
+              </Form.Select>
+            </Form.Group>
           </Col>
           <Col md={3}>
-            <Form.Select value={yearSelected} onChange={e=>setYearSelected(e.target.value)} aria-label="Year" required>
-              <option value="">Select Year</option>
-              {yearOptions.map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
-            </Form.Select>
+            <Form.Group>
+              <Form.Label>Sub-Department</Form.Label>
+              <Form.Select value={subdeptId} onChange={e=>setSubdeptId(e.target.value)} aria-label="Sub-department">
+                <option value="">Select Sub-Department</option>
+                {subsForDept.map(s=>(<option key={s.id} value={s.id}>{s.name}</option>))}
+              </Form.Select>
+            </Form.Group>
           </Col>
-          <Col md={1}><Button type="submit">Create</Button></Col>
+          <Col md={3}>
+            <Form.Group>
+              <Form.Label>Year Level</Form.Label>
+              {yearOptions.length > 0 ? (
+                <Form.Select value={yearSelected} onChange={e=>setYearSelected(e.target.value)} required>
+                  <option value="">Select Year</option>
+                  {yearOptions.map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
+                </Form.Select>
+              ) : (
+                <Form.Control 
+                  type="number" 
+                  value={yearSelected} 
+                  onChange={e=>setYearSelected(e.target.value)} 
+                  placeholder="Enter year (e.g., 1, 2, 3)" 
+                  min="1"
+                  required
+                />
+              )}
+            </Form.Group>
+          </Col>
+          <Col md={2} className="d-flex align-items-end">
+            <Button type="submit" className="w-100">Create</Button>
+          </Col>
         </Row>
       </Form>
       <Modal show={!!editingCurriculum} onHide={cancelEdit} centered>

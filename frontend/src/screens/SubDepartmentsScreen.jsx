@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Form, Modal, Row, Col } from 'react-bootstrap';
+import { Table, Button, Form, Modal } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 function useQuery(){
   return new URLSearchParams(useLocation().search);
@@ -11,26 +12,18 @@ const SubDepartmentsScreen = ()=>{
   const [name, setName] = useState('');
   const [departments, setDepartments] = useState([]);
   const [blockCounts, setBlockCounts] = useState({});
-  const [editingSub, setEditingSub] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [editDept, setEditDept] = useState(null);
   const [managingSub, setManagingSub] = useState(null);
   const [blocks, setBlocks] = useState([]);
-  const [blockYear, setBlockYear] = useState(2);
-  const [blockNumber, setBlockNumber] = useState('1');
-  const [editingBlock, setEditingBlock] = useState(null);
-  const [editBlockCode, setEditBlockCode] = useState('');
-  const [editBlockYear, setEditBlockYear] = useState(2);
-  const [editBlockNumber, setEditBlockNumber] = useState('1');
   const query = useQuery();
   const deptFilter = query.get('dept');
   const navigate = useNavigate();
+  const { notify } = useNotification();
 
   useEffect(()=>{
     (async ()=>{
       try{
         const token = localStorage.getItem('accessToken');
-        const headers = {'Content-Type':'application/json'};
+        const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
         const resp = await fetch('/api/subdepartments/', { headers });
         if(!resp.ok) return;
@@ -53,7 +46,7 @@ const SubDepartmentsScreen = ()=>{
     (async ()=>{
       try{
         const token = localStorage.getItem('accessToken');
-        const headers = {'Content-Type':'application/json'};
+        const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
         const r = await fetch('/api/departments/', { headers });
         if(!r.ok) return;
@@ -69,120 +62,223 @@ const SubDepartmentsScreen = ()=>{
     if(!name) return;
     const dept = deptFilter || (departments[0] && departments[0].id);
     if(!dept) return;
-    const token = localStorage.getItem('accessToken');
-    const headers = {'Content-Type':'application/json'};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-    const resp = await fetch('/api/subdepartments/', { method: 'POST', headers, body: JSON.stringify({name, department: dept})});
-    if(resp.ok){ const j = await resp.json(); setList(s=>[...s,j]); setBlockCounts(prev=>({...prev, [j.id]: 0})); setName(''); }
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if(token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch('/api/subdepartments/', { method: 'POST', headers, body: JSON.stringify({name, department: dept})});
+      if(resp.ok){
+        const j = await resp.json();
+        setList(s => [...s, j]);
+        setBlockCounts(prev => ({...prev, [j.id]: 0}));
+        setName('');
+        notify({ text: `Sub-department "${j.name}" created successfully`, variant: 'success' });
+      } else {
+        let errorMsg = 'Failed to create sub-department';
+        try {
+          const errText = await resp.text();
+          if (errText) {
+            try {
+              const errJson = JSON.parse(errText);
+              if (errJson.detail) errorMsg = errJson.detail;
+              else if (errJson.name) {
+                const nameErrors = Array.isArray(errJson.name) ? errJson.name.join(', ') : errJson.name;
+                errorMsg = `Name: ${nameErrors}`;
+              }
+            } catch (parseErr) {
+              errorMsg = errText.substring(0, 200);
+            }
+          }
+        } catch (e) {
+          errorMsg = `Error: ${e.message}`;
+        }
+        notify({ text: errorMsg, variant: 'danger' });
+      }
+    } catch (err) {
+      notify({ text: `Error: ${err.message}`, variant: 'danger' });
+    }
   };
 
-  const remove = async (id)=>{ if(!window.confirm('Delete sub-department?')) return; const token = localStorage.getItem('accessToken'); const headers={'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const resp=await fetch(`/api/subdepartments/${id}/`,{method:'DELETE', headers}); if(resp.ok){ setList(s=>s.filter(x=>x.id!==id)); setBlockCounts(prev=>{ const copy={...prev}; delete copy[id]; return copy; }); } };
-
-  const openEdit = (s)=>{ setEditingSub(s); setEditName(s.name||''); setEditDept(s.department||null); };
-
-  const saveEdit = async ()=>{ if(!editingSub) return; const token = localStorage.getItem('accessToken'); const headers={'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const resp = await fetch(`/api/subdepartments/${editingSub.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ name: editName, department: editDept }) }); if(resp.ok){ const j = await resp.json(); setList(ls=>ls.map(x=> x.id===j.id?j:x)); setEditingSub(null); setEditName(''); setEditDept(null); } };
+  const remove = async (id) => {
+    if(!window.confirm('Delete this sub-department?')) return;
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if(token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch(`/api/subdepartments/${id}/`, {method: 'DELETE', headers});
+      if(resp.ok){
+        setList(s => s.filter(x => x.id !== id));
+        setBlockCounts(prev => { const copy = {...prev}; delete copy[id]; return copy; });
+        notify({ text: 'Sub-department deleted successfully', variant: 'success' });
+      } else {
+        let errorMsg = 'Failed to delete sub-department';
+        try {
+          const errText = await resp.text();
+          if (errText) {
+            try {
+              const errJson = JSON.parse(errText);
+              if (errJson.detail) errorMsg = errJson.detail;
+            } catch (parseErr) {
+              errorMsg = errText.substring(0, 200);
+            }
+          }
+        } catch (e) {
+          errorMsg = `Error: ${e.message}`;
+        }
+        notify({ text: errorMsg, variant: 'danger' });
+      }
+    } catch (err) {
+      notify({ text: `Error: ${err.message}`, variant: 'danger' });
+    }
+  };
 
   return (
     <div>
       <div className="mb-2">
         <Button size="sm" variant="secondary" onClick={()=>navigate('/admin/departments')}>Back</Button>
       </div>
-      <h3>Sub-departments</h3>
+      <h3>Sub-Departments</h3>
       <Form onSubmit={add} className="mb-3">
-        <Form.Select value={deptFilter||''} onChange={()=>{}} disabled={!!deptFilter} className="mb-2">
-          {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
-        </Form.Select>
-        <Form.Control value={name} onChange={(e)=>setName(e.target.value)} placeholder="Sub-department name" required />
-        <Button type="submit" className="mt-2">Create</Button>
+        <Form.Group className="mb-2">
+          <Form.Label>Department</Form.Label>
+          <Form.Control
+            as="select"
+            disabled={!!deptFilter}
+            className="form-select"
+          >
+            {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
+          </Form.Control>
+        </Form.Group>
+        <Form.Group className="mb-2">
+          <Form.Label>Sub-Department Name</Form.Label>
+          <Form.Control
+            value={name}
+            onChange={(e)=>setName(e.target.value)}
+            placeholder="Enter sub-department name"
+            required
+          />
+        </Form.Group>
+        <Button type="submit">Create</Button>
       </Form>
 
       <Table striped>
-        <thead><tr><th>Name</th><th>Department</th><th>Blocks</th><th></th></tr></thead>
-        <tbody>{list.map(s=> (
-          <tr key={s.id}><td>{s.name}</td><td>{s.department_name||s.department}</td><td style={{width:100, textAlign:'center'}}>{blockCounts[s.id]||0}</td><td>
-            <Button size="sm" variant="secondary" onClick={async ()=>{ setManagingSub(s); try{ const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const r = await fetch(`/api/blocks/?sub_department=${s.id}`, { headers }); if(!r.ok) return setBlocks([]); const j = await r.json(); const data = Array.isArray(j)?j:(j.results||j); setBlocks(data); }catch(e){ setBlocks([]); } }}>Blocks</Button>{' '}
-            <Button size="sm" variant="danger" onClick={()=>remove(s.id)}>Delete</Button>{' '}
-            <Button size="sm" variant="outline-primary" onClick={()=>openEdit(s)}>Edit</Button>
-          </td></tr>
-        ))}</tbody>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Blocks</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map(s=>(
+            <tr key={s.id}>
+              <td>{s.name}</td>
+              <td>{s.department_name || s.department}</td>
+              <td style={{width: 100, textAlign: 'center'}}>{blockCounts[s.id] || 0}</td>
+              <td>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={async ()=>{
+                    setManagingSub(s);
+                    try{
+                      const token = localStorage.getItem('accessToken');
+                      const headers = { 'Content-Type': 'application/json' };
+                      if(token) headers['Authorization'] = `Bearer ${token}`;
+                      const r = await fetch(`/api/blocks/?sub_department=${s.id}`, { headers });
+                      if(!r.ok) return setBlocks([]);
+                      const j = await r.json();
+                      const data = Array.isArray(j)?j:(j.results||j);
+                      setBlocks(data);
+                    }catch(e){
+                      setBlocks([]);
+                    }
+                  }}
+                  className="me-2"
+                >
+                  Blocks
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={()=>remove(s.id)}
+                >
+                  Delete
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
       </Table>
 
-      <Modal show={!!editingSub} onHide={()=>{ setEditingSub(null); setEditName(''); setEditDept(null); }} centered>
-        <Modal.Header closeButton><Modal.Title>Edit Sub-department</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={async (e)=>{ e.preventDefault(); await saveEdit(); }}>
-            <Form.Group className="mb-2"><Form.Label>Name</Form.Label><Form.Control value={editName} onChange={(e)=>setEditName(e.target.value)} required/></Form.Group>
-            <Form.Group className="mb-2"><Form.Label>Department</Form.Label>
-              <Form.Select value={editDept||''} onChange={(e)=>setEditDept(e.target.value)}>
-                <option value="">Select department</option>
-                {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
-              </Form.Select>
-            </Form.Group>
-            <div className="d-flex justify-content-end"><Button type="submit">Save</Button></div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-
-      {/* Blocks manager modal */}
-      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); setBlockYear(2); setBlockNumber('1'); }} fullscreen>
+      {/* Blocks Manager Modal */}
+      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); }} fullscreen>
         <Modal.Header closeButton>
           <Modal.Title>Blocks for {managingSub?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={async (e)=>{ e.preventDefault(); if(!managingSub) return; const code = `${blockYear}0${blockNumber}`; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const resp = await fetch('/api/blocks/', { method:'POST', headers, body: JSON.stringify({ code, sub_department: managingSub.id, year: blockYear }) }); if(resp.ok){ const j = await resp.json(); setBlocks(bs=>[...bs,j]); setBlockCounts(prev=>({...prev, [managingSub.id]: (prev[managingSub.id]||0)+1})); setBlockNumber('1'); } }} className="mb-3">
-            <Row>
-              <Col md={3}>
-                <Form.Group>
-                  <Form.Label>Sub-department</Form.Label>
-                  <Form.Control readOnly value={`${managingSub?.department_name||''} / ${managingSub?.name||''}`} />
-                </Form.Group>
-              </Col>
-              <Col md={2}>
-                <Form.Group>
-                  <Form.Label>Year Level</Form.Label>
-                  <Form.Control type="number" value={blockYear} min={1} onChange={e=>setBlockYear(parseInt(e.target.value)||1)} placeholder="e.g. 2 for 2nd year" />
-                </Form.Group>
-              </Col>
-              <Col md={2}>
-                <Form.Group>
-                  <Form.Label>Number</Form.Label>
-                  <Form.Control value={blockNumber} onChange={e=>setBlockNumber(e.target.value)} placeholder="e.g. 1" />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group>
-                  <Form.Label>Block Code Preview</Form.Label>
-                  <Form.Control readOnly value={`${blockYear}0${blockNumber}`} />
-                </Form.Group>
-              </Col>
-              <Col md={1} className="d-flex align-items-end">
-                <Button type="submit">Create</Button>
-              </Col>
-            </Row>
-          </Form>
           <Table striped>
-            <thead><tr><th>Code</th><th>Year</th><th>Number</th><th></th></tr></thead>
-            <tbody>{blocks.map(b=> (
-              <tr key={b.id}><td>{b.code}</td><td>{b.year}</td><td>{(b.code && b.code.length>2) ? b.code.slice(2) : ''}</td><td>
-                <Button size="sm" variant="outline-primary" onClick={()=>{ setEditingBlock(b); setEditBlockCode(b.code||''); setEditBlockYear(b.year||2); setEditBlockNumber((b.code && b.code.length>2)? b.code.slice(2) : ''); }} style={{marginRight:6}}>Edit</Button>
-                <Button size="sm" variant="danger" onClick={async ()=>{ if(!window.confirm('Delete block?')) return; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization']=`Bearer ${token}`; const r = await fetch(`/api/blocks/${b.id}/`, { method:'DELETE', headers }); if(r.ok){ setBlocks(bs=>bs.filter(x=>x.id!==b.id)); setBlockCounts(prev=>({...prev, [managingSub.id]: Math.max(0,(prev[managingSub.id]||0)-1)})); } }}>Delete</Button>
-              </td></tr>
-            ))}</tbody>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Year</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {blocks.map(b=>(
+                <tr key={b.id}>
+                  <td>{b.code}</td>
+                  <td>{b.year}</td>
+                  <td>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={async ()=>{
+                        if(!window.confirm('Delete block?')) return;
+                        try {
+                          const token = localStorage.getItem('accessToken');
+                          const headers = { 'Content-Type': 'application/json' };
+                          if(token) headers['Authorization'] = `Bearer ${token}`;
+                          const r = await fetch(`/api/blocks/${b.id}/`, { method: 'DELETE', headers });
+                          if(r.ok){
+                            setBlocks(bs => bs.filter(x => x.id !== b.id));
+                            setBlockCounts(prev => ({...prev, [managingSub.id]: Math.max(0, (prev[managingSub.id] || 0) - 1)}));
+                            notify({ text: 'Block deleted successfully', variant: 'success' });
+                          } else {
+                            let errorMsg = 'Failed to delete block';
+                            try {
+                              const errText = await r.text();
+                              if (errText) {
+                                try {
+                                  const errJson = JSON.parse(errText);
+                                  if (errJson.detail) errorMsg = errJson.detail;
+                                } catch (parseErr) {
+                                  errorMsg = errText.substring(0, 200);
+                                }
+                              }
+                            } catch (e) {
+                              errorMsg = `Error: ${e.message}`;
+                            }
+                            notify({ text: errorMsg, variant: 'danger' });
+                          }
+                        } catch (err) {
+                          notify({ text: `Error: ${err.message}`, variant: 'danger' });
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </Table>
-          {/* Edit block modal */}
-          <Modal show={!!editingBlock} onHide={()=>{ setEditingBlock(null); setEditBlockCode(''); setEditBlockYear(2); setEditBlockNumber('1'); }} centered backdrop={false}>
-            <Modal.Header closeButton><Modal.Title>Edit Block</Modal.Title></Modal.Header>
-            <Modal.Body>
-              <Form onSubmit={async (e)=>{ e.preventDefault(); if(!editingBlock) return; const token = localStorage.getItem('accessToken'); const headers = {'Content-Type':'application/json'}; if(token) headers['Authorization'] = `Bearer ${token}`; const newCode = `${editBlockYear}0${editBlockNumber}`; const payload = { code: newCode, year: editBlockYear, sub_department: managingSub.id }; const resp = await fetch(`/api/blocks/${editingBlock.id}/`, { method: 'PATCH', headers, body: JSON.stringify(payload) }); if(resp.ok){ const j = await resp.json(); setBlocks(bs=>bs.map(x=> x.id===j.id?j:x)); setEditingBlock(null); setEditBlockCode(''); setEditBlockYear(2); setEditBlockNumber('1'); } }}>
-                <Form.Group className="mb-2"><Form.Label>Code</Form.Label><Form.Control value={editBlockCode} onChange={e=>setEditBlockCode(e.target.value)} required /></Form.Group>
-                <Form.Group className="mb-2"><Form.Label>Year</Form.Label><Form.Control type="number" value={editBlockYear} min={1} onChange={e=>setEditBlockYear(parseInt(e.target.value)||1)} required /></Form.Group>
-                <Form.Group className="mb-2"><Form.Label>Number</Form.Label><Form.Control value={editBlockNumber} onChange={e=>setEditBlockNumber(e.target.value)} required /></Form.Group>
-                <div className="d-flex justify-content-end"><Button type="submit">Save</Button></div>
-              </Form>
-            </Modal.Body>
-          </Modal>
         </Modal.Body>
-        <Modal.Footer><Button onClick={()=>{ setManagingSub(null); setBlocks([]); }}>Close</Button></Modal.Footer>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={()=>{ setManagingSub(null); setBlocks([]); }}>Close</Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

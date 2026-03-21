@@ -69,21 +69,21 @@ const SetupProgress = ({ onStatus }) => {
         </Tab>
         <Tab eventKey="people" title="People">
           <h6 className="mt-2">Professors</h6>
-          <Table size="sm" striped>
-            <thead><tr><th>Name</th><th>Department</th><th>Sub-department</th></tr></thead>
+          <Table size="sm" striped responsive>
+            <thead><tr><th>Name</th><th>Department</th><th>Sub-dept</th></tr></thead>
             <tbody>
               {people.professors.map(p => (
-                <tr key={p.id}><td>{p.name}</td><td>{p.department_name || p.department || ''}</td><td>{p.sub_department_name || p.sub_department || ''}</td></tr>
+                <tr key={p.id}><td style={{maxWidth:'150px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</td><td style={{maxWidth:'150px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.department_name || p.department || ''}</td><td style={{maxWidth:'100px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.sub_department_name || p.sub_department || ''}</td></tr>
               ))}
             </tbody>
           </Table>
 
           <h6 className="mt-3">Students</h6>
-          <Table size="sm" striped>
-            <thead><tr><th>Username</th><th>Email</th><th>Department</th><th>Sub-department</th><th>Year</th><th>Block</th></tr></thead>
+          <Table size="sm" striped responsive>
+            <thead><tr><th>Username</th><th>Email</th><th>Dept</th><th>Sub-dept</th><th>Year</th><th>Block</th></tr></thead>
             <tbody>
               {people.students.map(s => (
-                <tr key={s.id}><td>{s.username}</td><td>{s.email}</td><td>{s.department_name || ''}</td><td>{s.sub_department_name || ''}</td><td>{s.year || ''}</td><td>{s.block_code || ''}</td></tr>
+                <tr key={s.id}><td style={{maxWidth:'100px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.username}</td><td style={{maxWidth:'120px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'0.85rem'}}>{s.email}</td><td style={{maxWidth:'80px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.department_name || ''}</td><td style={{maxWidth:'80px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.sub_department_name || ''}</td><td style={{maxWidth:'50px',textAlign:'center'}}>{s.year || ''}</td><td style={{maxWidth:'60px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.block_code || ''}</td></tr>
               ))}
             </tbody>
           </Table>

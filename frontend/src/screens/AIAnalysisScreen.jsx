@@ -1,58 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Alert, Spinner, ListGroup, Button, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 const AIAnalysisScreen = () => {
   const navigate = useNavigate();
+  const { notify } = useNotification();
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState(null);
 
   useEffect(() => {
-    // Simulate AI analysis
-    setTimeout(() => {
-      setAnalysis({
-        efficiency: 78,
-        insights: [
-          {
-            type: 'warning',
-            category: 'Gap Detection',
-            message: 'Long gap detected on TUESDAY between 12P and 2P for Block A',
-            impact: 'Students may become fatigued or lose focus',
-            suggestion: 'Consider moving the NETWORKS class to fill this gap'
-          },
-          {
-            type: 'info',
-            category: 'Workload Balance',
-            message: 'Professor DE JESUS, ARNAZ P. has 4 consecutive classes on MONDAY',
-            impact: 'Potential teacher fatigue',
-            suggestion: 'Distribute classes more evenly across the week'
-          },
-          {
-            type: 'success',
-            category: 'Room Utilization',
-            message: 'ROOM 101 is well-utilized with 85% occupancy rate',
-            impact: 'Efficient use of resources',
-            suggestion: 'No changes recommended'
-          },
-          {
-            type: 'warning',
-            category: 'Optimization',
-            message: 'LAB 202 is underutilized at 45% capacity',
-            impact: 'Wasted resource potential',
-            suggestion: 'Consider scheduling additional lab sessions in this room'
-          },
-          {
-            type: 'info',
-            category: 'Campus Stay',
-            message: 'All students meet the 12-hour maximum campus stay requirement',
-            impact: 'Complies with institutional policies',
-            suggestion: 'No action required'
+    // Fetch AI analysis from backend
+    const fetchAnalysis = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const headers = {'Content-Type': 'application/json'};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const resp = await fetch('/api/schedule-entries/analyze/', { headers });
+        if (resp.ok) {
+          const data = await resp.json();
+          setAnalysis(data);
+        } else {
+          let errorMsg = 'Failed to analyze schedule';
+          try {
+            const errText = await resp.text();
+            if (errText) {
+              const errJson = JSON.parse(errText);
+              if (errJson.detail) errorMsg = errJson.detail;
+            }
+          } catch (e) {
+            // Use default error message
           }
-        ]
-      });
-      setIsAnalyzing(false);
-    }, 3000);
-  }, []);
+          notify({ text: errorMsg, variant: 'danger' });
+          // Still show empty analysis
+          setAnalysis({
+            efficiency: 0,
+            insights: [{
+              type: 'warning',
+              category: 'Error',
+              message: errorMsg,
+              impact: 'Cannot perform analysis',
+              suggestion: 'Please try again or contact support'
+            }]
+          });
+        }
+      } catch (err) {
+        notify({ text: `Error: ${err.message}`, variant: 'danger' });
+        setAnalysis({
+          efficiency: 0,
+          insights: [{
+            type: 'warning',
+            category: 'Error',
+            message: err.message,
+            impact: 'Cannot perform analysis',
+            suggestion: 'Check your connection and try again'
+          }]
+        });
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+
+    // Add a small delay to show the loading state
+    setTimeout(fetchAnalysis, 1500);
+  }, [notify]);
 
   const handleAcceptSchedule = () => {
     navigate('/export');

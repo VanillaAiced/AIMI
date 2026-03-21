@@ -34,3 +34,9 @@ frontend/node_modules/
 
 # Editor directories
 /.cache/
+
+# Test & Dummy Data
+test_db.sqlite3
+dummy_data.json
+*.test.sqlite3
+test_*.json

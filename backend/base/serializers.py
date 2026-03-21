@@ -12,7 +12,7 @@ class SchoolSerializer(serializers.ModelSerializer):
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Department
-        fields = '__all__'
+        fields = ['id', 'name']
 
 
 class SubDepartmentSerializer(serializers.ModelSerializer):
@@ -118,6 +118,7 @@ class TimeSlotSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     room_requirement = serializers.PrimaryKeyRelatedField(queryset=models.RoomType.objects.all(), allow_null=True, required=False)
+    professor_requirement = serializers.PrimaryKeyRelatedField(queryset=models.SubDepartment.objects.all(), allow_null=True, required=False)
     # display convenience fields
     room_requirement_name = serializers.CharField(source='room_requirement.name', read_only=True)
     professor_requirement_name = serializers.CharField(source='professor_requirement.name', read_only=True)
@@ -181,8 +182,9 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
 
 
 class CurriculumSerializer(serializers.ModelSerializer):
-    # make courses writable as a PK list so PATCH payloads like { courses: [1,2] } update DB
+    # make courses and blocks writable as PK lists for M2M updates
     courses = serializers.PrimaryKeyRelatedField(many=True, queryset=models.Course.objects.all(), required=False)
+    blocks = serializers.PrimaryKeyRelatedField(many=True, queryset=models.Block.objects.all(), required=False)
 
     class Meta:
         model = models.Curriculum
@@ -283,6 +285,8 @@ class CurriculumSerializer(serializers.ModelSerializer):
 
 
 class ProfessorSerializer(serializers.ModelSerializer):
+    department = serializers.PrimaryKeyRelatedField(queryset=models.Department.objects.all(), allow_null=True, required=False)
+    sub_department = serializers.PrimaryKeyRelatedField(queryset=models.SubDepartment.objects.all(), allow_null=True, required=False)
     department_name = serializers.CharField(source='department.name', read_only=True)
     sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
     class Meta:
@@ -291,6 +295,8 @@ class ProfessorSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
+    sub_department = serializers.PrimaryKeyRelatedField(queryset=models.SubDepartment.objects.all(), allow_null=True, required=False)
+    block = serializers.PrimaryKeyRelatedField(queryset=models.Block.objects.all(), allow_null=True, required=False)
     department_name = serializers.CharField(source='department.name', read_only=True)
     sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
     block_code = serializers.CharField(source='block.code', read_only=True)
@@ -305,6 +311,48 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class ScheduleEntrySerializer(serializers.ModelSerializer):
+    time_slot = serializers.SerializerMethodField()
+    course = serializers.SerializerMethodField()
+    room = serializers.SerializerMethodField()
+    professor = serializers.SerializerMethodField()
+
     class Meta:
         model = models.ScheduleEntry
-        fields = '__all__'
+        fields = ['id', 'course', 'block', 'professor', 'room', 'time_slot', 'created_at']
+
+    def get_time_slot(self, obj):
+        if obj.time_slot:
+            return {
+                'id': obj.time_slot.id,
+                'day': obj.time_slot.day,
+                'start_time': obj.time_slot.start_time.strftime('%H:%M') if obj.time_slot.start_time else '',
+                'end_time': obj.time_slot.end_time.strftime('%H:%M') if obj.time_slot.end_time else ''
+            }
+        return None
+
+    def get_course(self, obj):
+        if obj.course:
+            return {
+                'id': obj.course.id,
+                'code': obj.course.code,
+                'name': obj.course.name
+            }
+        return None
+
+    def get_room(self, obj):
+        if obj.room:
+            return {
+                'id': obj.room.id,
+                'name': obj.room.name,
+                'number': obj.room.number
+            }
+        return None
+
+    def get_professor(self, obj):
+        if obj.professor:
+            return {
+                'id': obj.professor.id,
+                'name': obj.professor.name,
+                'email': obj.professor.email
+            }
+        return None

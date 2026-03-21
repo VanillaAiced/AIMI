@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 
 const DepartmentsScreen = () => {
   const [list, setList] = useState([]);
   const [name, setName] = useState('');
   const [subdeptCounts, setSubdeptCounts] = useState({});
+  const { notify } = useNotification();
 
   useEffect(()=>{
     (async ()=>{
@@ -43,25 +45,70 @@ const DepartmentsScreen = () => {
 
   const add = async (e)=>{
     e.preventDefault();
-    const token = localStorage.getItem('accessToken');
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const resp = await fetch('/api/departments/', { method: 'POST', headers, body: JSON.stringify({name})});
-    if (resp.ok) {
-      const j = await resp.json();
-      setList((s)=>[...s,j]);
-      setSubdeptCounts(prev=>({...prev, [j.id]: 0}));
-      setName('');
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch('/api/departments/', { method: 'POST', headers, body: JSON.stringify({name})});
+      if (resp.ok) {
+        const j = await resp.json();
+        setList((s)=>[...s,j]);
+        setSubdeptCounts(prev=>({...prev, [j.id]: 0}));
+        setName('');
+        notify({ text: `Department "${j.name}" created successfully`, variant: 'success' });
+      } else {
+        let errorMsg = 'Failed to create department';
+        let errText = '';
+        try {
+          errText = await resp.text();
+          if (errText) {
+            try {
+              const errJson = JSON.parse(errText);
+              // Handle DRF error responses
+              if (errJson.detail) {
+                errorMsg = errJson.detail;
+              } else if (errJson.name) {
+                // Handle field-specific errors
+                const nameErrors = Array.isArray(errJson.name) ? errJson.name.join(', ') : errJson.name;
+                errorMsg = `Name: ${nameErrors}`;
+              } else if (errJson.non_field_errors) {
+                const errors = Array.isArray(errJson.non_field_errors) ? errJson.non_field_errors.join(', ') : errJson.non_field_errors;
+                errorMsg = errors;
+              } else if (typeof errJson === 'string') {
+                errorMsg = errJson;
+              }
+            } catch (parseErr) {
+              // If not JSON, use text as-is
+              errorMsg = errText.substring(0, 200);
+            }
+          }
+        } catch (e) {
+          errorMsg = `Error: ${e.message}`;
+        }
+        notify({ text: errorMsg, variant: 'danger' });
+      }
+    } catch (err) {
+      notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
   };
 
   const remove = async (id)=>{
     if (!window.confirm('Delete this department?')) return;
-    const token = localStorage.getItem('accessToken');
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const resp = await fetch(`/api/departments/${id}/`, { method: 'DELETE', headers });
-    if (resp.ok) setList((s)=>s.filter(d=>d.id!==id));
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch(`/api/departments/${id}/`, { method: 'DELETE', headers });
+      if (resp.ok) {
+        setList((s)=>s.filter(d=>d.id!==id));
+        notify({ text: 'Department deleted successfully', variant: 'success' });
+      } else {
+        const errMsg = await resp.text();
+        notify({ text: `Failed to delete department: ${errMsg}`, variant: 'danger' });
+      }
+    } catch (err) {
+      notify({ text: `Error: ${err.message}`, variant: 'danger' });
+    }
   };
 
   const openSubDepartments = (deptId)=>{

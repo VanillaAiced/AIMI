@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationProvider';
 import SetupProgress from '../components/SetupProgress';
 
 // disable generate until prerequisites exist
 
 const ScheduleGeneratorScreen = ()=>{
   const navigate = useNavigate();
+  const { notify } = useNotification();
   const [running,setRunning]=useState(false);
   const [ready, setReady] = useState(false);
   const onStatus = (counts) => {
@@ -16,15 +18,29 @@ const ScheduleGeneratorScreen = ()=>{
   };
   const run = async ()=>{
     setRunning(true);
-    const token = localStorage.getItem('accessToken');
-    const headers = {'Content-Type':'application/json'}; if (token) headers['Authorization']=`Bearer ${token}`;
-    try{
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = {'Content-Type':'application/json'}; if (token) headers['Authorization']=`Bearer ${token}`;
       const resp = await fetch('/api/schedule-entries/generate/', { method:'POST', headers });
       if (resp.ok) {
-        // simple redirect to viewer
-        window.location.href = '/admin/schedule';
-      } else alert('Generate failed');
-    }catch(e){ alert(e.message); }
+        notify({ text: 'Schedule generated successfully! Redirecting...', variant: 'success' });
+        setTimeout(() => { window.location.href = '/admin/schedule'; }, 1000);
+      } else {
+        let errorMsg = 'Failed to generate schedule';
+        let errText = '';
+        try {
+          errText = await resp.text();
+          const errJson = JSON.parse(errText);
+          if (errJson.detail) errorMsg = errJson.detail;
+          else if (typeof errJson === 'string') errorMsg = errJson;
+        } catch (e) {
+          if (errText) errorMsg = errText.substring(0, 150);
+        }
+        notify({ text: errorMsg, variant: 'danger' });
+      }
+    } catch (err) {
+      notify({ text: `Error: ${err.message}`, variant: 'danger' });
+    }
     setRunning(false);
   };
   return (
