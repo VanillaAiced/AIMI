@@ -148,9 +148,6 @@ class CourseOfferingSerializer(serializers.ModelSerializer):
     assigned_block = serializers.PrimaryKeyRelatedField(queryset=models.Block.objects.all())
     assigned_professor = serializers.PrimaryKeyRelatedField(queryset=models.Professor.objects.all(), allow_null=True, required=False)
 
-    class Meta:
-        model = models.CourseOffering
-        fields = '__all__'
 
     def validate(self, data):
         # ensure frequency and duration make sense on the related course
@@ -282,13 +279,7 @@ class CurriculumSerializer(serializers.ModelSerializer):
         return result
 
 
-class YearLevelSerializer(serializers.ModelSerializer):
-    # expose blocks as PK list to help frontend filter year-levels by blocks
-    blocks = serializers.PrimaryKeyRelatedField(many=True, queryset=models.Block.objects.all(), required=False)
 
-    class Meta:
-        model = models.YearLevel
-        fields = '__all__'
 
 
 class ProfessorSerializer(serializers.ModelSerializer):

@@ -128,19 +128,7 @@ class Course(models.Model):
 		return f"{self.code} - {self.name}"
 
 
-class CourseOffering(models.Model):
-	name = models.CharField(max_length=255, blank=True)
-	course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='offerings')
-	assigned_block = models.ForeignKey(Block, on_delete=models.CASCADE, related_name='course_offerings')
-	assigned_professor = models.ForeignKey('Professor', on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_offerings')
-
-	def save(self, *args, **kwargs):
-		if not self.name:
-			self.name = f"{self.course.code} - {self.assigned_block.code}"
-		super().save(*args, **kwargs)
-
-	def __str__(self):
-		return self.name
+# CourseOffering removed: courses are linked to blocks via `Curriculum` instead.
 
 
 # Curriculum and YearLevels
@@ -154,13 +142,7 @@ class Curriculum(models.Model):
 		return self.name
 
 
-class YearLevel(models.Model):
-	name = models.CharField(max_length=200)
-	curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, related_name='year_levels')
-	blocks = models.ManyToManyField(Block, blank=True, related_name='year_levels')
-
-	def __str__(self):
-		return f"{self.curriculum.name} - {self.name}"
+# YearLevel model removed: handled via migrations when deleting from DB
 
 
 # Professors
@@ -168,7 +150,6 @@ class Professor(models.Model):
 	name = models.CharField(max_length=200)
 	# link to Django user for easy lookup in admin and programmatic linking
 	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='professor_profile')
-	availability = models.TextField(blank=True)
 	email = models.EmailField(blank=True, null=True)
 	department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='professors')
 	sub_department = models.ForeignKey(SubDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='professors')
@@ -194,7 +175,6 @@ class Student(models.Model):
 
 # Schedule entries (one per scheduled class session)
 class ScheduleEntry(models.Model):
-	course_offering = models.ForeignKey(CourseOffering, on_delete=models.CASCADE, related_name='schedule_entries')
 	course = models.ForeignKey(Course, on_delete=models.CASCADE)
 	block = models.ForeignKey(Block, on_delete=models.CASCADE)
 	professor = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True, blank=True)
@@ -206,16 +186,8 @@ class ScheduleEntry(models.Model):
 	class Meta:
 		unique_together = ('room', 'time_slot')
 
-	def save(self, *args, **kwargs):
-		# ensure course/block are consistent with offering
-		if not self.course_id:
-			self.course = self.course_offering.course
-		if not self.block_id:
-			self.block = self.course_offering.assigned_block
-		super().save(*args, **kwargs)
-
 	def __str__(self):
-		return f"{self.course_offering} @ {self.time_slot} in {self.room}"
+		return f"{self.course} @ {self.time_slot} in {self.room}"
 
 
 # Backwards-compatibility aliases for existing views/endpoints

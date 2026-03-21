@@ -119,7 +119,7 @@ const SchedulePreviewScreen = () => {
             <ul className="mb-0 mt-2">
               <li>Total Classes: {sampleSchedule.length}</li>
               <li>No scheduling conflicts detected</li>
-              <li>All professors within availability constraints</li>
+              <li>All professors assigned</li>
               <li>Room capacity requirements met</li>
             </ul>
           </Alert>
