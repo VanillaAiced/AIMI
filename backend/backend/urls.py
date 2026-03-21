@@ -17,12 +17,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.views.generic import TemplateView
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('base.urls')),
 ]
+
+# If the frontend has been built, serve its `index.html` at the site root.
+# `FRONTEND_BUILD_DIR` is added to TEMPLATES[0]['DIRS'] in settings.py when present,
+# so TemplateView will find `index.html` there.
+if getattr(settings, 'SERVE_FRONTEND', False) and getattr(settings, 'FRONTEND_BUILD_DIR', None) and settings.FRONTEND_BUILD_DIR.exists():
+    urlpatterns = [
+        path('', TemplateView.as_view(template_name='index.html')),
+    ] + urlpatterns
 
 # Serve static and media files during development
 if settings.DEBUG:

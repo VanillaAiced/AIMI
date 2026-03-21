@@ -24,19 +24,27 @@ const LoginScreen = ({ setUser }) => {
           return;
         }
         const json = await resp.json();
-        const user = { email, name: json.username };
+
+        // store tokens
+        if (json.access) localStorage.setItem('accessToken', json.access);
+        if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
+
+        // use authoritative role from server response only
+        const serverRole = json.role;
+        const user = { email, name: json.username, role: serverRole };
         localStorage.setItem('user', JSON.stringify(user));
         if (setUser) setUser(user);
 
         if (json.created) {
           notify({ text: 'Account created and signed in as ' + json.username, variant: 'success' });
-          // show success briefly then navigate
-          setTimeout(() => navigate('/data-input'), 900);
-          return;
+        } else {
+          notify({ text: 'Signed in as ' + json.username, variant: 'success' });
         }
 
-        notify({ text: 'Signed in as ' + json.username, variant: 'success' });
-        setTimeout(() => navigate('/data-input'), 400);
+        // Redirect based on authoritative role
+        if (serverRole === 'admin') setTimeout(() => navigate('/admin'), 300);
+        else if (serverRole === 'professor') setTimeout(() => navigate('/professor'), 300);
+        else setTimeout(() => navigate('/student'), 300);
       } catch (err) {
         notify({ text: 'Login error: ' + err.message, variant: 'danger' });
       }
@@ -71,9 +79,14 @@ const LoginScreen = ({ setUser }) => {
               />
             </Form.Group>
 
-            <Button type="submit" variant="primary" className="mt-3">
-              Sign In
-            </Button>
+            <div className="d-flex gap-2 mt-3">
+              <Button type="submit" variant="primary">
+                Sign In
+              </Button>
+              <Button variant="outline-secondary" onClick={() => navigate('/register')}>
+                Sign Up
+              </Button>
+            </div>
           </Form>
         </Card>
       </Col>

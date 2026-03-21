@@ -3,8 +3,11 @@ django-cors-headers==4.9.0
 whitenoise==6.4.0
 
 # Optional/data-processing
+# Use a currently available ortools release
 ortools==9.15.6755
-pandas>=2.2.0
+pandas==2.1.4
 
 # Dev / config
 python-dotenv==1.0.0
+djangorestframework==3.14.0
+djangorestframework-simplejwt==2.9.0

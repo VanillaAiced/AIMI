@@ -3,33 +3,126 @@ import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
 
-const RegisterScreen = () => {
+const RegisterScreen = ({ setUser }) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [role, setRole] = useState('student');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+
+  // Student/Professor specific fields
+  const [departments, setDepartments] = useState([]);
+  const [subdepartments, setSubdepartments] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [department, setDepartment] = useState('');
+  const [subDepartment, setSubDepartment] = useState('');
+  const [yearLevel, setYearLevel] = useState('1');
+  const [blockCode, setBlockCode] = useState('');
+  
   const navigate = useNavigate();
   const { notify } = useNotification();
+  const hasDepartmentData = departments.length > 0;
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    if (!name) return notify({ text: 'Please enter your full name', variant: 'danger' });
     if (password !== confirm) return notify({ text: 'Passwords do not match', variant: 'danger' });
+
+    // role-specific validation
+    if (role === 'student' && hasDepartmentData) {
+      if (!department) return notify({ text: 'Please select a Department', variant: 'danger' });
+      if (!subDepartment) return notify({ text: 'Please select a Sub-Department', variant: 'danger' });
+      if (!yearLevel) return notify({ text: 'Please select a Year Level', variant: 'danger' });
+      if (!blockCode) return notify({ text: 'Please select a Block', variant: 'danger' });
+    } else if (role === 'professor' && hasDepartmentData) {
+      if (!department) return notify({ text: 'Please select a Department', variant: 'danger' });
+      if (!subDepartment) return notify({ text: 'Please select a Sub-Department', variant: 'danger' });
+    }
     try {
+      const payload = { name, username: username || email, email, password, role };
+        if (role === 'student' && hasDepartmentData) {
+        payload.department = department;
+        payload.sub_department = subDepartment;
+        payload.year = yearLevel;
+        payload.block = blockCode;
+        } else if (role === 'professor' && hasDepartmentData) {
+        payload.department = department;
+        payload.sub_department = subDepartment;
+      }
+
       const resp = await fetch('/api/auth/signup/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username || email, email, password }),
+        body: JSON.stringify(payload),
       });
       if (!resp.ok) {
         const text = await resp.text();
         return notify({ text: 'Signup failed: ' + text, variant: 'danger' });
       }
-      notify({ text: 'Signup successful — please sign in', variant: 'success' });
-      setTimeout(() => navigate('/login'), 700);
+      const json = await resp.json();
+      // store tokens and set user
+      if (json.access) localStorage.setItem('accessToken', json.access);
+      if (json.refresh) localStorage.setItem('refreshToken', json.refresh);
+      // use authoritative role returned by server
+      const serverRole = json.role;
+      const user = { email, name: json.username, role: serverRole };
+      localStorage.setItem('user', JSON.stringify(user));
+      if (setUser) setUser(user);
+      notify({ text: 'Signup successful — signed in as ' + json.username, variant: 'success' });
+      // Redirect based on authoritative role
+      if (serverRole === 'admin') setTimeout(() => navigate('/admin'), 700);
+      else if (serverRole === 'professor') setTimeout(() => navigate('/professor'), 700);
+      else setTimeout(() => navigate('/student'), 700);
     } catch (err) {
       notify({ text: 'Signup error: ' + err.message, variant: 'danger' });
     }
   };
+
+    // Load departments on mount; load subdepartments/blocks on selection
+    React.useEffect(() => {
+      (async () => {
+        try {
+          const token = localStorage.getItem('accessToken');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const dresp = await fetch('/api/departments/', { headers });
+          if (dresp.ok) setDepartments(await dresp.json());
+        } catch (e) {
+          // ignore; departments optional for local setups
+        }
+      })();
+    }, []);
+
+    React.useEffect(() => {
+      (async () => {
+        try {
+          if (!department) return setSubdepartments([]);
+          const headers = { 'Content-Type': 'application/json' };
+          const sresp = await fetch(`/api/subdepartments/?department=${encodeURIComponent(department)}`, { headers });
+          if (sresp.ok) setSubdepartments(await sresp.json());
+        } catch (e) {
+          setSubdepartments([]);
+        }
+      })();
+    }, [department]);
+
+    React.useEffect(() => {
+      (async () => {
+        try {
+          if (!subDepartment) return setBlocks([]);
+          const headers = { 'Content-Type': 'application/json' };
+          // fetch only blocks that match selected sub-department AND year level
+          const params = new URLSearchParams();
+          params.set('sub_department', subDepartment);
+          if (yearLevel) params.set('year', yearLevel);
+          const bresp = await fetch(`/api/blocks/?${params.toString()}`, { headers });
+          if (bresp.ok) setBlocks(await bresp.json());
+        } catch (e) {
+          setBlocks([]);
+        }
+      })();
+    }, [subDepartment, yearLevel]);
 
   return (
     <Row className="justify-content-md-center">
@@ -37,6 +130,88 @@ const RegisterScreen = () => {
         <Card className="p-3">
           <h2>Register</h2>
           <Form onSubmit={submitHandler}>
+            <Form.Group controlId="name" className="my-2">
+              <Form.Label>Full Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="my-2">
+                <Form.Label>User Type</Form.Label>
+                <Form.Select value={role} onChange={(e)=>setRole(e.target.value)}>
+                  <option value="student">Student</option>
+                  <option value="professor">Professor</option>
+                </Form.Select>
+            </Form.Group>
+
+              {role === 'student' && (
+                <>
+                  {!hasDepartmentData && (
+                    <p className="text-muted small mb-2">
+                      Department setup is empty right now. You can still register; admin can assign academic details later.
+                    </p>
+                  )}
+                  <Form.Group className="my-2">
+                    <Form.Label>Department</Form.Label>
+                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)} disabled={!hasDepartmentData}>
+                      <option value="">-- Select Department --</option>
+                      {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Sub-Department</Form.Label>
+                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)} disabled={!hasDepartmentData}>
+                      <option value="">-- Select Sub-Department --</option>
+                      {subdepartments.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Year Level</Form.Label>
+                    <Form.Select value={yearLevel} onChange={(e)=>setYearLevel(e.target.value)}>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Block</Form.Label>
+                    <Form.Select value={blockCode} onChange={(e)=>setBlockCode(e.target.value)} disabled={!hasDepartmentData}>
+                      <option value="">-- Select Block --</option>
+                      {blocks.map(b=> <option key={b.id} value={b.id}>{b.code}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  {/* Max Units is not required on signup; removed per UX change */}
+                </>
+              )}
+
+              {role === 'professor' && (
+                <>
+                  {!hasDepartmentData && (
+                    <p className="text-muted small mb-2">
+                      Department setup is empty right now. You can still register; admin can assign academic details later.
+                    </p>
+                  )}
+                  <Form.Group className="my-2">
+                    <Form.Label>Department</Form.Label>
+                    <Form.Select value={department} onChange={(e)=>setDepartment(e.target.value)} disabled={!hasDepartmentData}>
+                      <option value="">-- Select Department --</option>
+                      {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="my-2">
+                    <Form.Label>Sub-Department</Form.Label>
+                    <Form.Select value={subDepartment} onChange={(e)=>setSubDepartment(e.target.value)} disabled={!hasDepartmentData}>
+                      <option value="">-- Select Sub-Department --</option>
+                      {subdepartments.map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </>
+              )}
             <Form.Group controlId="email" className="my-2">
               <Form.Label>Email address</Form.Label>
               <Form.Control

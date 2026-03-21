@@ -39,7 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'base.apps.BaseConfig',
+    'rest_framework',
 ]
+
+# Use BigAutoField by default to avoid AutoField warnings
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,6 +81,11 @@ FRONTEND_BUILD_STATIC = FRONTEND_BUILD_DIR / 'static'
 if FRONTEND_BUILD_DIR.exists():
     # add the build dir to template search paths
     TEMPLATES[0]['DIRS'].append(str(FRONTEND_BUILD_DIR))
+
+# Toggle serving the built frontend from Django. Set to True only when you
+# intentionally want Django to serve the frontend build (e.g., simple deploy).
+# Keep False during backend-only development.
+SERVE_FRONTEND = False
 
 
 WSGI_APPLICATION = 'backend.wsgi.application'
@@ -134,10 +143,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Additional locations the staticfiles app will traverse
-# Include a local `static/` folder and the frontend build static (if present)
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+# Include a local `static/` folder and the frontend build static (if present).
+# Only add paths that actually exist to avoid warnings when the folder isn't present.
+STATICFILES_DIRS = []
+local_static = BASE_DIR / 'static'
+if local_static.exists():
+    STATICFILES_DIRS.append(local_static)
 if FRONTEND_BUILD_STATIC.exists():
     STATICFILES_DIRS.append(FRONTEND_BUILD_STATIC)
 
@@ -154,5 +165,22 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # `STATICFILES_DIRS` during development without running `collectstatic`.
 WHITENOISE_USE_FINDERS = True
 
+# REST framework + JWT configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
 # Development CORS settings - allow frontend to access API during development
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True

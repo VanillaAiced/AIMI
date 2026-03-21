@@ -10,11 +10,16 @@ const Header = ({ user, setUser }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout/', { method: 'POST' });
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      await fetch('/api/auth/logout/', { method: 'POST', headers });
     } catch (e) {
       // ignore
     }
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     if (setUser) setUser(null);
     console.debug('Header: calling notify signout');
     notify({ text: 'Signed out', variant: 'info', timeout: 3000 });
@@ -43,9 +48,20 @@ const Header = ({ user, setUser }) => {
                   <i className="fas fa-home"></i> Home
                 </Nav.Link>
               </LinkContainer>
+              <LinkContainer to="/payment">
+                <Nav.Link>
+                  <i className="fab fa-paypal"></i> Subscription
+                </Nav.Link>
+              </LinkContainer>
               {user ? (
                 <>
-                  <Nav.Link onClick={()=>navigate('/data-input')}>
+                  <Nav.Link onClick={()=>{
+                    const role = (user && user.role);
+                    if (!role) return navigate('/login');
+                    if (role === 'admin') navigate('/admin');
+                    else if (role === 'professor') navigate('/professor');
+                    else navigate('/student');
+                  }}>
                     <i className="fas fa-user"></i> {user.email}
                   </Nav.Link>
                   <Nav.Link onClick={handleLogout}>

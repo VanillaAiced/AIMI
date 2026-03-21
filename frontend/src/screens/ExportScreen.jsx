@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Card, Button, Alert, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { jsPDF } from 'jspdf';
 
 const ExportScreen = () => {
   const navigate = useNavigate();
@@ -19,11 +20,81 @@ const ExportScreen = () => {
   const uniqueRooms = scheduleData.rooms.length;
 
   const handleExportPDF = () => {
-    notify({ text: 'Exporting schedule as PDF... In production, this would generate and download a PDF file.', variant: 'info' });
+    if (!generatedSchedule || generatedSchedule.length === 0) {
+      notify({ text: 'No schedule available to export.', variant: 'warning' });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const title = 'Generated Schedule';
+      doc.setFontSize(16);
+      doc.text(title, 14, 20);
+
+      doc.setFontSize(10);
+      let y = 30;
+      const lineHeight = 7;
+
+      // Header row
+      doc.text('Day | Time | Subject | Code | Block | Professor | Room', 14, y);
+      y += lineHeight;
+
+      generatedSchedule.forEach((item, idx) => {
+        const row = `${item.day} | ${item.time} | ${item.subject} | ${item.classCode || ''} | ${item.block || ''} | ${item.professor || ''} | ${item.room || ''}`;
+        // wrap if near bottom
+        if (y > 280) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(row, 14, y);
+        y += lineHeight;
+      });
+
+      doc.save('schedule.pdf');
+      notify({ text: 'PDF downloaded.', variant: 'success' });
+    } catch (err) {
+      notify({ text: 'Error generating PDF: ' + err.message, variant: 'danger' });
+    }
   };
 
   const handleExportCSV = () => {
-    notify({ text: 'Exporting schedule as CSV... In production, this would generate and download a CSV file.', variant: 'info' });
+    if (!generatedSchedule || generatedSchedule.length === 0) {
+      notify({ text: 'No schedule available to export.', variant: 'warning' });
+      return;
+    }
+
+    try {
+      const headers = ['Day', 'Time', 'Subject', 'ClassCode', 'Block', 'Professor', 'Room'];
+      const csvRows = [headers.join(',')];
+
+      generatedSchedule.forEach(item => {
+        const row = [
+          item.day,
+          item.time,
+          '"' + (item.subject || '') + '"',
+          item.classCode || '',
+          item.block || '',
+          '"' + (item.professor || '') + '"',
+          '"' + (item.room || '') + '"'
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'schedule.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      notify({ text: 'CSV downloaded.', variant: 'success' });
+    } catch (err) {
+      notify({ text: 'Error generating CSV: ' + err.message, variant: 'danger' });
+    }
   };
 
   const handleFinalizeSchedule = () => {
@@ -32,7 +103,9 @@ const ExportScreen = () => {
   };
 
   const handleStartNew = () => {
+    // Clearing server-side data is disabled in production. Only clear client state.
     localStorage.clear();
+    notify({ text: 'Client state cleared. Server data is preserved.', variant: 'info' });
     navigate('/');
   };
 

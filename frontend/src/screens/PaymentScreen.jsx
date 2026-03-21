@@ -1,25 +1,39 @@
 import React, { useState } from 'react';
-import { Container, Card, Button, Alert, Spinner } from 'react-bootstrap';
+import { Container, Card, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import PayPal from './PayPal';
 
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
-  const handlePayment = () => {
+  const handlePaymentSuccess = (details) => {
+    setPaymentError('');
     setIsProcessing(true);
-    
-    // Simulate payment and schedule generation process
+
+    localStorage.setItem('paymentCompleted', 'true');
+    localStorage.setItem('lastPaymentDetails', JSON.stringify({
+      id: details?.id,
+      status: details?.status,
+      payer: details?.payer?.email_address,
+      updateTime: details?.update_time,
+    }));
+
     setTimeout(() => {
-      // Simulate successful payment
-      localStorage.setItem('paymentCompleted', 'true');
-      
-      // Simulate schedule generation
-      setTimeout(() => {
-        setIsProcessing(false);
-        navigate('/schedule-preview');
-      }, 3000);
-    }, 2000);
+      setIsProcessing(false);
+      navigate('/schedule-preview');
+    }, 1500);
+  };
+
+  const handlePaymentError = (err) => {
+    setIsProcessing(false);
+    setPaymentError(err?.message || 'Payment failed. Please try again.');
+  };
+
+  const handlePaymentCancel = () => {
+    setIsProcessing(false);
+    setPaymentError('Payment was cancelled. You can try again when ready.');
   };
 
   return (
@@ -41,7 +55,7 @@ const PaymentScreen = () => {
               <Card className="mb-4 bg-light">
                 <Card.Body>
                   <h4 className="mb-3">Schedule Generation Service</h4>
-                  <h2 className="text-primary mb-3">$29.99</h2>
+                  <h2 className="text-primary mb-3">$5.99</h2>
                   <ul className="text-start" style={{ display: 'inline-block' }}>
                     <li>Automated schedule generation</li>
                     <li>Conflict detection & resolution</li>
@@ -52,14 +66,20 @@ const PaymentScreen = () => {
                 </Card.Body>
               </Card>
 
-              <Button 
-                variant="primary" 
-                size="lg" 
-                onClick={handlePayment}
-                className="mb-3"
-              >
-                <i className="fab fa-paypal"></i> Pay with PayPal
-              </Button>
+              {paymentError && (
+                <Alert variant="danger" className="mb-3">
+                  {paymentError}
+                </Alert>
+              )}
+
+              <div className="mb-3">
+                <PayPal
+                  amount="5.99"
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                  onCancel={handlePaymentCancel}
+                />
+              </div>
 
               <div className="mt-3">
                 <small className="text-muted">
