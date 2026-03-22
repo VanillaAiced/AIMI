@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { getApiBaseUrl } from '../apiClient';
 
 const RegisterScreen = ({ setUser }) => {
   const [name, setName] = useState('');
@@ -51,7 +52,7 @@ const RegisterScreen = ({ setUser }) => {
         payload.sub_department = subDepartment;
       }
 
-      const resp = await fetch('/api/auth/signup/', {
+      const resp = await fetch(getApiBaseUrl() + '/api/auth/signup/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -98,7 +99,7 @@ const RegisterScreen = ({ setUser }) => {
           const token = localStorage.getItem('accessToken');
           const headers = { 'Content-Type': 'application/json' };
           if (token) headers['Authorization'] = `Bearer ${token}`;
-          const dresp = await fetch('/api/departments/', { headers });
+          const dresp = await fetch(getApiBaseUrl() + '/api/departments/', { headers });
           if (dresp.ok) setDepartments(await dresp.json());
         } catch (e) {
           // ignore; departments optional for local setups
@@ -111,7 +112,7 @@ const RegisterScreen = ({ setUser }) => {
         try {
           if (!department) return setSubdepartments([]);
           const headers = { 'Content-Type': 'application/json' };
-          const sresp = await fetch(`/api/subdepartments/?department=${encodeURIComponent(department)}`, { headers });
+          const sresp = await fetch(getApiBaseUrl() + `/api/subdepartments/?department=${encodeURIComponent(department)}`, { headers });
           if (sresp.ok) setSubdepartments(await sresp.json());
         } catch (e) {
           setSubdepartments([]);
@@ -128,7 +129,7 @@ const RegisterScreen = ({ setUser }) => {
           const params = new URLSearchParams();
           params.set('sub_department', subDepartment);
           if (yearLevel) params.set('year', yearLevel);
-          const bresp = await fetch(`/api/blocks/?${params.toString()}`, { headers });
+          const bresp = await fetch(getApiBaseUrl() + `/api/blocks/?${params.toString()}`, { headers });
           if (bresp.ok) setBlocks(await bresp.json());
         } catch (e) {
           setBlocks([]);
