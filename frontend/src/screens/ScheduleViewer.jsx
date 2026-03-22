@@ -14,7 +14,10 @@ const ScheduleViewer = ()=>{
   const [showAIMIChat, setShowAIMIChat] = useState(false);
 
   useEffect(()=>{ 
-    apiFetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>setEntries(j)).catch(()=>setEntries([])); 
+    apiFetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>{
+      const data = Array.isArray(j) ? j : (j.results || []);
+      setEntries(data);
+    }).catch(()=>setEntries([])); 
   },[]);
 
   // Get unique blocks, professors, rooms from entries
