@@ -317,13 +317,14 @@ class StudentSerializer(serializers.ModelSerializer):
 class ScheduleEntrySerializer(serializers.ModelSerializer):
     time_slot = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
+    building = serializers.SerializerMethodField()
     room = serializers.SerializerMethodField()
     professor = serializers.SerializerMethodField()
     block = serializers.SerializerMethodField()
 
     class Meta:
         model = models.ScheduleEntry
-        fields = ['id', 'course', 'block', 'professor', 'room', 'time_slot', 'created_at']
+        fields = ['id', 'course', 'building', 'block', 'professor', 'room', 'time_slot', 'created_at']
 
     def get_time_slot(self, obj):
         if obj.time_slot:
@@ -341,6 +342,14 @@ class ScheduleEntrySerializer(serializers.ModelSerializer):
                 'id': obj.course.id,
                 'code': obj.course.code,
                 'name': obj.course.name
+            }
+        return None
+
+    def get_building(self, obj):
+        if obj.room and obj.room.building:
+            return {
+                'id': obj.room.building.id,
+                'name': obj.room.building.name
             }
         return None
 

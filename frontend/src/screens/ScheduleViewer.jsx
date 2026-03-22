@@ -186,11 +186,12 @@ const ScheduleViewer = ()=>{
         
         {filteredEntries.length > 0 && (
           <Table striped hover size="sm">
-            <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th><th>Block</th></tr></thead>
+            <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Building</th><th>Room</th><th>Professor</th><th>Block</th></tr></thead>
             <tbody>{filteredEntries.map(e=>(<tr key={e.id}>
               <td>{e.time_slot? e.time_slot.day: '-'}</td>
               <td>{e.time_slot? (e.time_slot.start_time+'-'+e.time_slot.end_time): '-'}</td>
               <td>{e.course? e.course.code: '-'}</td>
+              <td>{e.building? e.building.name: '-'}</td>
               <td>{e.room? e.room.name: '-'}</td>
               <td>{e.professor? e.professor.name: '-'}</td>
               <td>{typeof e.block === 'object' ? (e.block.code || e.block.name || '-') : '-'}</td>
