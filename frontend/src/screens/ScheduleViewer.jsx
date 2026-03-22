@@ -42,19 +42,56 @@ const ScheduleViewer = ()=>{
     });
   },[]);
 
+  // Reset sub-dept and year when department changes
+  useEffect(() => {
+    setSelectedSubDept('');
+    setSelectedYear('');
+    setSelectedId('');
+  }, [selectedDept]);
+
+  // Reset year and block when sub-dept changes
+  useEffect(() => {
+    setSelectedYear('');
+    setSelectedId('');
+  }, [selectedSubDept]);
+
+  // Reset block when year changes
+  useEffect(() => {
+    setSelectedId('');
+  }, [selectedYear]);
+
   // Calculate filtered sub-departments based on selected department
   const filteredSubDepts = selectedDept 
-    ? subDepartments.filter(sd => String(sd.department) === String(selectedDept))
+    ? subDepartments.filter(sd => {
+        const deptId = sd.department?.id || sd.department;
+        return String(deptId) === String(selectedDept);
+      })
     : subDepartments;
+
+  // Get unique years from filtered blocks
+  const uniqueYears = Array.from(new Set(
+    filteredBlocks.filter(b => b.year).map(b => String(b.year))
+  )).sort((a, b) => parseInt(a) - parseInt(b));
 
   // Calculate filtered blocks based on selections
   const filteredBlocks = allBlocks.filter(block => {
-    if (selectedDept && String(block.sub_department_id) !== null) {
-      const blockSubDept = subDepartments.find(sd => sd.id === block.sub_department_id);
-      if (!blockSubDept || String(blockSubDept.department) !== String(selectedDept)) return false;
+    // Filter by department (via sub-department)
+    if (selectedDept) {
+      const blockSubDeptId = block.sub_department?.id || block.sub_department_id;
+      const blockSubDept = subDepartments.find(sd => sd.id === blockSubDeptId);
+      if (!blockSubDept) return false;
+      const blockDeptId = blockSubDept.department?.id || blockSubDept.department;
+      if (String(blockDeptId) !== String(selectedDept)) return false;
     }
-    if (selectedSubDept && String(block.sub_department_id) !== String(selectedSubDept)) return false;
-    if (selectedYear && parseInt(block.year) !== parseInt(selectedYear)) return false;
+    // Filter by sub-department
+    if (selectedSubDept) {
+      const blockSubDeptId = block.sub_department?.id || block.sub_department_id;
+      if (String(blockSubDeptId) !== String(selectedSubDept)) return false;
+    }
+    // Filter by year
+    if (selectedYear) {
+      if (parseInt(block.year) !== parseInt(selectedYear)) return false;
+    }
     return true;
   });
 
@@ -101,13 +138,14 @@ const ScheduleViewer = ()=>{
         <Col md={2}>
           <Form.Group>
             <Form.Label className="small mb-2 fw-bold">Year Level</Form.Label>
-            <Form.Control 
+            <Form.Select 
               size="sm" 
-              type="number" 
-              placeholder="All Years" 
               value={selectedYear} 
               onChange={e=>setSelectedYear(e.target.value)}
-            />
+            >
+              <option value="">All Years</option>
+              {uniqueYears.map(year=><option key={year} value={year}>{year}</option>)}
+            </Form.Select>
           </Form.Group>
         </Col>
         <Col md={2}>
