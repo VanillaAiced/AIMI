@@ -12,20 +12,26 @@ email = 'admin@gmail.com'
 try:
     user = User.objects.filter(email__iexact=email).first()
     if not user:
-        print(f'No user found with email: {email} - skipping promotion')
-        sys.exit(0)
-    user.is_superuser = True
-    user.is_staff = True
-    user.save()
+        # Create admin account if it doesn't exist
+        user = User.objects.create_superuser(
+            username=email,
+            email=email,
+            password='admin123'
+        )
+        print(f'Created new admin account: {email} with password: admin123')
+    else:
+        # Promote existing user
+        user.is_superuser = True
+        user.is_staff = True
+        user.save()
+        print(f'Promoted {user.username} to admin')
+    
+    # Ensure profile exists
     profile = getattr(user, 'profile', None)
     from base.models import Profile
     if profile is None:
         Profile.objects.create(user=user, role='admin')
-        print(f'Created Profile and promoted {user.username} to admin')
-    else:
-        profile.role = 'admin'
-        profile.save()
-        print(f'Promoted {user.username} to admin')
+        print(f'Created Profile for {user.username}')
 except Exception as e:
     print('Error promoting user:', e)
     sys.exit(0)
