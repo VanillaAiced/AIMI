@@ -309,7 +309,10 @@ const BuildingsScreen = () => {
                         setDeletingRoomId(r.id);
                         try {
                           console.log('Deleting room:', r.id);
-                          const resp = await apiFetch(`/api/rooms/${r.id}/`, { method: 'DELETE' });
+                          const token = localStorage.getItem('accessToken');
+                          const headers = { 'Content-Type': 'application/json' };
+                          if (token) headers['Authorization'] = `Bearer ${token}`;
+                          const resp = await apiFetch(`/api/rooms/${r.id}/`, { method: 'DELETE', headers });
                           console.log('Delete response:', resp.status, resp.ok);
                           if (resp.ok) {
                             setRooms(rs => rs.filter(x => x.id !== r.id));
