@@ -88,6 +88,10 @@ class Room(models.Model):
 
 # Time slots
 class TimeSlot(models.Model):
+	TYPE_CHOICES = [
+		('LECTURE', 'Lecture'),
+		('LAB', 'Lab'),
+	]
 	DAY_CHOICES = [
 		('MONDAY', 'Monday'),
 		('TUESDAY', 'Tuesday'),
@@ -101,12 +105,13 @@ class TimeSlot(models.Model):
 	day = models.CharField(max_length=20, choices=DAY_CHOICES)
 	start_time = models.TimeField()
 	end_time = models.TimeField()
+	type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='LECTURE')
 
 	class Meta:
-		unique_together = ('day', 'start_time', 'end_time')
+		unique_together = ('day', 'start_time', 'end_time', 'type')
 
 	def __str__(self):
-		return f"{self.get_day_display()} {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+		return f"{self.get_day_display()} {self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')} ({self.get_type_display()})"
 
 
 # Courses and offerings
