@@ -143,13 +143,11 @@ for idx, prof_name in enumerate(prof_names):
 # Create Courses
 courses = []
 course_names = ['Programming 101', 'Data Structures', 'Web Development', 'Database Design', 'Software Engineering', 'Algorithms']
-subdepts = list(SubDepartment.objects.all())[:3]
 for idx, course_name in enumerate(course_names):
-    subdept = subdepts[idx % len(subdepts)]
     course, _ = Course.objects.get_or_create(
-        name=course_name,
+        code=f"COURSE{idx+1:03d}",
         defaults={
-            'sub_department': subdept,
+            'name': course_name,
             'units': 3,
             'frequency_per_week': 2,  # 2 sessions per week
             'duration_minutes': 120  # 2 hours per session
@@ -160,6 +158,7 @@ for idx, course_name in enumerate(course_names):
 
 # Create Curricula and assign courses + blocks to them
 curricula = []
+subdepts = list(SubDepartment.objects.all())[:3]
 for subdept in subdepts:
     for year in range(1, 4):
         curr_name = f"{subdept.name} - Year {year}"
@@ -168,8 +167,9 @@ for subdept in subdepts:
             defaults={'sub_department': subdept}
         )
         
-        # Add courses to this curriculum (select by units to spread them)
-        for course in courses[(year-1)*2:(year-1)*2+2]:
+        # Add courses to this curriculum (select 2 per year from available courses)
+        selected_courses = courses[(year-1)*2:(year-1)*2+2] if (year-1)*2 < len(courses) else courses[-2:]
+        for course in selected_courses:
             curriculum.courses.add(course)
         
         # Add blocks to this curriculum
