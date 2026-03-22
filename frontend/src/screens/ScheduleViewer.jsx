@@ -71,31 +71,28 @@ const ScheduleViewer = ()=>{
     : subDepartments;
 
   // Calculate filtered blocks based on selections
-  const filteredBlocks = allBlocks.filter(block => {
-    // Filter by department (via sub-department)
-    if (selectedDept) {
-      const blockSubDeptId = block.sub_department?.id || block.sub_department_id;
-      const blockSubDept = subDepartments.find(sd => sd.id === blockSubDeptId);
-      if (!blockSubDept) return false;
-      const blockDeptId = blockSubDept.department?.id || blockSubDept.department;
-      if (String(blockDeptId) !== String(selectedDept)) return false;
-    }
-    // Filter by sub-department
-    if (selectedSubDept) {
-      const blockSubDeptId = block.sub_department?.id || block.sub_department_id;
-      if (String(blockSubDeptId) !== String(selectedSubDept)) return false;
-    }
-    // Filter by year
-    if (selectedYear) {
-      if (parseInt(block.year) !== parseInt(selectedYear)) return false;
-    }
-    return true;
-  });
+  const filteredBlocks = selectedSubDept
+    ? allBlocks.filter(block => {
+        const blockSubDeptId = block.sub_department?.id || block.sub_department_id;
+        if (String(blockSubDeptId) !== String(selectedSubDept)) return false;
+        if (selectedYear) {
+          if (parseInt(block.year) !== parseInt(selectedYear)) return false;
+        }
+        return true;
+      })
+    : [];
 
-  // Get unique years from filtered blocks
-  const uniqueYears = Array.from(new Set(
-    filteredBlocks.filter(b => b.year).map(b => String(b.year))
-  )).sort((a, b) => parseInt(a) - parseInt(b));
+  // Get unique years from filtered blocks (only if sub-dept selected)
+  const uniqueYears = selectedSubDept
+    ? Array.from(new Set(
+        allBlocks
+          .filter(b => {
+            const bSubDeptId = b.sub_department?.id || b.sub_department_id;
+            return String(bSubDeptId) === String(selectedSubDept) && b.year;
+          })
+          .map(b => String(b.year))
+      )).sort((a, b) => parseInt(a) - parseInt(b))
+    : [];
 
   // Get block IDs from filtered blocks
   const filteredBlockIds = filteredBlocks.map(b => b.id);
@@ -148,6 +145,7 @@ const ScheduleViewer = ()=>{
                   size="sm" 
                   value={selectedYear} 
                   onChange={e=>setSelectedYear(e.target.value)}
+                  disabled={!selectedSubDept}
                 >
                   <option value="">All Years</option>
                   {uniqueYears.map(year=><option key={year} value={year}>{year}</option>)}
@@ -157,7 +155,12 @@ const ScheduleViewer = ()=>{
             <Col md={2}>
               <Form.Group>
                 <Form.Label className="small mb-2 fw-bold">Block</Form.Label>
-                <Form.Select size="sm" value={selectedId} onChange={e=>setSelectedId(e.target.value)}>
+                <Form.Select 
+                  size="sm" 
+                  value={selectedId} 
+                  onChange={e=>setSelectedId(e.target.value)}
+                  disabled={!selectedSubDept}
+                >
                   <option value="">All Blocks</option>
                   {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code || b.name}</option>)}
                 </Form.Select>
