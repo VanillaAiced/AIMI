@@ -87,118 +87,201 @@ def generate_schedule():
         # track days used for this offering in this run (keyed by course+block)
         used_days = set(offering_assigned_days.get((off.course.id, off.assigned_block.id), set()))
 
-        for ts in timeslots:
-            if assigned_sessions >= needed:
-                break
+        # If course has an assigned timeslot, use it directly
+        if off.course.time_slot:
+            ts = off.course.time_slot
+            for _ in range(needed):
+                # Check if timeslot is available (room and professor not occupied)
+                best_choice = None
+                best_score = None
 
-            # duration constraint (hard)
-            ts_dur = _timeslot_duration_minutes(ts)
-            if getattr(off.course, 'duration_minutes', 0) and ts_dur < off.course.duration_minutes:
-                continue
-
-            # block conflict (hard)
-            if (off.assigned_block.id, ts.id) in occupied_block_times:
-                continue
-
-            best_choice = None
-            best_score = None
-
-            # iterate candidate rooms
-            for r in rooms:
-                # room type requirement (hard)
-                if off.course.room_requirement and r.room_type_id != off.course.room_requirement_id:
-                    continue
-                # room/time occupied (hard)
-                if (r.id, ts.id) in occupied_room_times:
-                    continue
-
-                # choose professor
-                prof = off.assigned_professor
-                if prof:
-                    # assigned professor must be available and match requirement
-                    if (prof.id, ts.id) in occupied_prof_times:
+                # iterate candidate rooms
+                for r in rooms:
+                    # room type requirement (hard)
+                    if off.course.room_requirement and r.room_type_id != off.course.room_requirement_id:
                         continue
-                    if off.course.professor_requirement and prof.sub_department_id != off.course.professor_requirement_id:
+                    # room/time occupied (hard)
+                    if (r.id, ts.id) in occupied_room_times:
                         continue
-                    candidate_profs = [prof]
-                else:
-                    # pick any available professor that satisfies requirement (if set)
-                    candidate_profs = []
-                    for p in models.Professor.objects.all():
-                        if (p.id, ts.id) in occupied_prof_times:
+
+                    # choose professor
+                    prof = off.assigned_professor
+                    if prof:
+                        # assigned professor must be available and match requirement
+                        if (prof.id, ts.id) in occupied_prof_times:
                             continue
-                        if off.course.professor_requirement and p.sub_department_id != off.course.professor_requirement_id and not off.course.allow_any_professor:
+                        if off.course.professor_requirement and prof.sub_department_id != off.course.professor_requirement_id:
                             continue
-                        candidate_profs.append(p)
-                    if not candidate_profs:
-                        continue
+                        candidate_profs = [prof]
+                    else:
+                        # pick any available professor that satisfies requirement (if set)
+                        candidate_profs = []
+                        for p in models.Professor.objects.all():
+                            if (p.id, ts.id) in occupied_prof_times:
+                                continue
+                            if off.course.professor_requirement and p.sub_department_id != off.course.professor_requirement_id and not off.course.allow_any_professor:
+                                continue
+                            candidate_profs.append(p)
+                        if not candidate_profs:
+                            continue
 
-                # evaluate each professor candidate and pick best (score lower is better)
-                for p in candidate_profs:
-                    # compute score
-                    score = 0.0
-                    # avoid very early / very late classes
-                    h = ts.start_time.hour
-                    if h < 8:
-                        score += 10.0
-                    if h >= 19:
-                        score += 10.0
-
-                    # gap penalty for block: prefer small gaps (avoid long gaps)
-                    block_minutes = block_assigned_minutes.get(off.assigned_block.id, [])
-                    if block_minutes:
-                        gap = min(abs(_timeslot_minutes(ts) - m) for m in block_minutes)
-                        score += gap / 60.0
-
-                    # gap penalty for professor availability consistency
-                    prof_minutes = prof_assigned_minutes.get(p.id, [])
-                    if prof_minutes:
-                        pgap = min(abs(_timeslot_minutes(ts) - m) for m in prof_minutes)
-                        score += pgap / 120.0
-
-                    # prefer spreading sessions across days for this offering
-                    if ts.day not in used_days and assigned_sessions > 0:
-                        score -= 5.0
-
-                    # choose best
-                    if best_score is None or score < best_score:
-                        best_score = score
+                    # pick first available professor (simpler for assigned timeslots)
+                    for p in candidate_profs:
                         best_choice = (r, p)
+                        break
+                    if best_choice:
+                        break
 
-            if not best_choice:
-                continue
+                if not best_choice:
+                    continue
 
-            room, prof = best_choice
+                room, prof = best_choice
 
-            # final hard checks before creating
-            if (room.id, ts.id) in occupied_room_times:
-                continue
-            if (prof.id if prof else None, ts.id) in occupied_prof_times:
-                continue
-            if (off.assigned_block.id, ts.id) in occupied_block_times:
-                continue
+                # final hard checks before creating
+                if (room.id, ts.id) in occupied_room_times:
+                    continue
+                if (prof.id if prof else None, ts.id) in occupied_prof_times:
+                    continue
+                if (off.assigned_block.id, ts.id) in occupied_block_times:
+                    continue
 
-            # create ScheduleEntry
-            se = models.ScheduleEntry.objects.create(
-                course=off.course,
-                block=off.assigned_block,
-                professor=prof,
-                room=room,
-                time_slot=ts,
-            )
+                # create ScheduleEntry
+                se = models.ScheduleEntry.objects.create(
+                    course=off.course,
+                    block=off.assigned_block,
+                    professor=prof,
+                    room=room,
+                    time_slot=ts,
+                )
 
-            # update occupied sets and helper maps
-            occupied_room_times.add((room.id, ts.id))
-            occupied_prof_times.add((prof.id if prof else None, ts.id))
-            occupied_block_times.add((off.assigned_block.id, ts.id))
-            m = _timeslot_minutes(ts)
-            block_assigned_minutes[off.assigned_block.id].append(m)
-            if prof:
-                prof_assigned_minutes[prof.id].append(m)
-            used_days.add(ts.day)
+                # update occupied sets and helper maps
+                occupied_room_times.add((room.id, ts.id))
+                occupied_prof_times.add((prof.id if prof else None, ts.id))
+                occupied_block_times.add((off.assigned_block.id, ts.id))
+                m = _timeslot_minutes(ts)
+                block_assigned_minutes[off.assigned_block.id].append(m)
+                if prof:
+                    prof_assigned_minutes[prof.id].append(m)
+                used_days.add(ts.day)
 
-            assigned_sessions += 1
-            created += 1
-            details.append({'course': off.course.id, 'block': off.assigned_block.id, 'timeslot': ts.id, 'room': room.id, 'professor': prof.id if prof else None})
+                assigned_sessions += 1
+                created += 1
+                details.append({'course': off.course.id, 'block': off.assigned_block.id, 'timeslot': ts.id, 'room': room.id, 'professor': prof.id if prof else None})
+        
+        else:
+            # If no assigned timeslot, use existing smart scheduling logic
+            for ts in timeslots:
+                if assigned_sessions >= needed:
+                    break
+
+                # duration constraint (hard)
+                ts_dur = _timeslot_duration_minutes(ts)
+                if getattr(off.course, 'duration_minutes', 0) and ts_dur < off.course.duration_minutes:
+                    continue
+
+                # block conflict (hard)
+                if (off.assigned_block.id, ts.id) in occupied_block_times:
+                    continue
+
+                best_choice = None
+                best_score = None
+
+                # iterate candidate rooms
+                for r in rooms:
+                    # room type requirement (hard)
+                    if off.course.room_requirement and r.room_type_id != off.course.room_requirement_id:
+                        continue
+                    # room/time occupied (hard)
+                    if (r.id, ts.id) in occupied_room_times:
+                        continue
+
+                    # choose professor
+                    prof = off.assigned_professor
+                    if prof:
+                        # assigned professor must be available and match requirement
+                        if (prof.id, ts.id) in occupied_prof_times:
+                            continue
+                        if off.course.professor_requirement and prof.sub_department_id != off.course.professor_requirement_id:
+                            continue
+                        candidate_profs = [prof]
+                    else:
+                        # pick any available professor that satisfies requirement (if set)
+                        candidate_profs = []
+                        for p in models.Professor.objects.all():
+                            if (p.id, ts.id) in occupied_prof_times:
+                                continue
+                            if off.course.professor_requirement and p.sub_department_id != off.course.professor_requirement_id and not off.course.allow_any_professor:
+                                continue
+                            candidate_profs.append(p)
+                        if not candidate_profs:
+                            continue
+
+                    # evaluate each professor candidate and pick best (score lower is better)
+                    for p in candidate_profs:
+                        # compute score
+                        score = 0.0
+                        # avoid very early / very late classes
+                        h = ts.start_time.hour
+                        if h < 8:
+                            score += 10.0
+                        if h >= 19:
+                            score += 10.0
+
+                        # gap penalty for block: prefer small gaps (avoid long gaps)
+                        block_minutes = block_assigned_minutes.get(off.assigned_block.id, [])
+                        if block_minutes:
+                            gap = min(abs(_timeslot_minutes(ts) - m) for m in block_minutes)
+                            score += gap / 60.0
+
+                        # gap penalty for professor availability consistency
+                        prof_minutes = prof_assigned_minutes.get(p.id, [])
+                        if prof_minutes:
+                            pgap = min(abs(_timeslot_minutes(ts) - m) for m in prof_minutes)
+                            score += pgap / 120.0
+
+                        # prefer spreading sessions across days for this offering
+                        if ts.day not in used_days and assigned_sessions > 0:
+                            score -= 5.0
+
+                        # choose best
+                        if best_score is None or score < best_score:
+                            best_score = score
+                            best_choice = (r, p)
+
+                if not best_choice:
+                    continue
+
+                room, prof = best_choice
+
+                # final hard checks before creating
+                if (room.id, ts.id) in occupied_room_times:
+                    continue
+                if (prof.id if prof else None, ts.id) in occupied_prof_times:
+                    continue
+                if (off.assigned_block.id, ts.id) in occupied_block_times:
+                    continue
+
+                # create ScheduleEntry
+                se = models.ScheduleEntry.objects.create(
+                    course=off.course,
+                    block=off.assigned_block,
+                    professor=prof,
+                    room=room,
+                    time_slot=ts,
+                )
+
+                # update occupied sets and helper maps
+                occupied_room_times.add((room.id, ts.id))
+                occupied_prof_times.add((prof.id if prof else None, ts.id))
+                occupied_block_times.add((off.assigned_block.id, ts.id))
+                m = _timeslot_minutes(ts)
+                block_assigned_minutes[off.assigned_block.id].append(m)
+                if prof:
+                    prof_assigned_minutes[prof.id].append(m)
+                used_days.add(ts.day)
+
+                assigned_sessions += 1
+                created += 1
+                details.append({'course': off.course.id, 'block': off.assigned_block.id, 'timeslot': ts.id, 'room': room.id, 'professor': prof.id if prof else None})
 
     return {'created': created, 'details': details}
