@@ -77,8 +77,8 @@ const CurriculumScreen = () => {
     let curriculum = curricula.find(c => c.sub_department === Number(subdeptId) || (c.sub_department && c.sub_department.id === Number(subdeptId)) );
     try {
       if (!curriculum) {
-        // create curriculum with a sensible default name
-        const resp = await apiFetch('/api/curricula/', { method: 'POST', headers, body: JSON.stringify({ name: 'Curriculum', sub_department: Number(subdeptId) }) });
+        // create curriculum with year
+        const resp = await apiFetch('/api/curricula/', { method: 'POST', headers, body: JSON.stringify({ name: 'Curriculum', sub_department: Number(subdeptId), year: Number(yearSelected) }) });
         if (!resp.ok) {
           const errMsg = await resp.text();
           notify({ text: `Failed to create curriculum: ${errMsg}`, variant: 'danger' });
@@ -133,11 +133,8 @@ const CurriculumScreen = () => {
     const subId = (curr.sub_department && typeof curr.sub_department === 'object') ? curr.sub_department.id : curr.sub_department;
     setEditingDeptId(subId ? (subdepartments.find(s=>s.id===subId)||{}).department : '');
     setEditingSubdeptId(subId || '');
-    // prefill year from linked blocks if any
-    const cBlockIds = Array.isArray(curr.blocks) ? curr.blocks.map(b => (typeof b === 'number' ? b : (b && b.id ? b.id : null))).filter(Boolean) : [];
-    const linkedBlocks = blocks.filter(b => cBlockIds.includes(typeof b.id === 'number' ? b.id : Number(b.id)));
-    const years = Array.from(new Set(linkedBlocks.map(b => Number(b.year)))).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-    setEditingYear(years.length?years[0]: '');
+    // prefill year from curriculum.year field or derive from blocks if not set
+    setEditingYear(curr.year ? String(curr.year) : '');
   };
 
   const [editingCurriculum, setEditingCurriculum] = useState(null);
@@ -173,7 +170,7 @@ const CurriculumScreen = () => {
       const sub = subdepartments.find(s=>s.id===Number(editingSubdeptId));
       const newName = sub ? `${sub.name} ${ordinal(yearNum)} Year` : (editingCurriculum.name || 'Curriculum');
 
-      const body = { name: newName, sub_department: Number(editingSubdeptId), blocks: blocksToLink };
+      const body = { name: newName, sub_department: Number(editingSubdeptId), year: yearNum, blocks: blocksToLink };
       const r = await apiFetch(`/api/curricula/${editingCurriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify(body) });
       if (r.ok) {
         const updated = await r.json();
@@ -363,7 +360,7 @@ const CurriculumScreen = () => {
             <tr key={idx}>
               <td>{r.department? (r.department.name || r.department) : ''}</td>
               <td>{r.subdepartment? (r.subdepartment.name || r.subdepartment) : ''}</td>
-              <td>{Array.isArray(r.years) && r.years.length ? `${ordinal(r.years[0])} Year` : ''}</td>
+              <td>{r.curriculum.year ? `${ordinal(r.curriculum.year)} Year` : (Array.isArray(r.years) && r.years.length ? `${ordinal(r.years[0])} Year` : '')}</td>
               <td>
                 <button className="btn btn-sm btn-outline-secondary me-2" onClick={()=>openCourses(r.curriculum)}>Courses</button>
                 <button className="btn btn-sm btn-outline-primary me-2" onClick={()=>handleEdit(r.curriculum)}>Edit</button>

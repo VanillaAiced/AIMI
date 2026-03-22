@@ -141,6 +141,7 @@ class Course(models.Model):
 class Curriculum(models.Model):
 	name = models.CharField(max_length=255)
 	sub_department = models.ForeignKey(SubDepartment, on_delete=models.CASCADE, related_name='curricula')
+	year = models.IntegerField(null=True, blank=True)  # Store the year level (1, 2, 3, 4)
 	courses = models.ManyToManyField(Course, blank=True, related_name='curricula')
 	blocks = models.ManyToManyField(Block, blank=True, related_name='curricula')
 
