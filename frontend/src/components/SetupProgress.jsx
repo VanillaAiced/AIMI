@@ -29,39 +29,47 @@ const SetupProgress = ({ onStatus }) => {
         }
         
         const [deps, bds, cs, curricula, profs, users] = await Promise.all(promises);
+        console.log('SetupProgress responses:', { deps: deps.ok, bds: bds.ok, cs: cs.ok, curricula: curricula.ok, profs: profs.ok, users: users?.ok });
         const res = {};
         if (deps.ok) {
           const depsJson = await deps.json();
+          console.log('deps response:', depsJson);
           res.departments = Array.isArray(depsJson) ? depsJson.length : (depsJson.results ? depsJson.results.length : 0);
         }
         if (bds.ok) {
           const bdsJson = await bds.json();
+          console.log('buildings response:', bdsJson);
           res.buildings = Array.isArray(bdsJson) ? bdsJson.length : (bdsJson.results ? bdsJson.results.length : 0);
         }
         if (cs.ok) {
           const csJson = await cs.json();
+          console.log('courses response:', csJson);
           res.courses = Array.isArray(csJson) ? csJson.length : (csJson.results ? csJson.results.length : 0);
         }
         // map curricula -> offerings for compatibility with existing screens
         if (curricula.ok) {
           const cj = await curricula.json();
+          console.log('curricula response:', cj);
           const cl = Array.isArray(cj) ? cj : (cj.results || []);
           res.curricula = cl.length;
           res.offerings = cl.length; // keep `offerings` key for legacy checks
         }
         if (profs.ok) {
           const pjson = await profs.json();
+          console.log('professors response:', pjson);
           const p = Array.isArray(pjson) ? pjson : (pjson.results || pjson);
           res.professors = Array.isArray(p) ? p.length : 0;
           setPeople(prev => ({ ...prev, professors: Array.isArray(p) ? p : [] }));
         }
         if (users && users.ok) {
           const ujson = await users.json();
+          console.log('users response:', ujson);
           const all = ujson.users || [];
           const studs = all.filter(x => x.role === 'student' || (!x.role && !x.is_staff && !x.is_superuser));
           res.students = studs.length;
           setPeople(prev => ({ ...prev, students: studs }));
         }
+        console.log('SetupProgress final counts:', res);
         setCounts(res);
         if (onStatus) onStatus(res);
       }catch(e){ console.error('SetupProgress error:', e); }
