@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const ProfessorsScreen = ()=>{
   const [list, setList] = useState([]);
@@ -15,7 +16,7 @@ const ProfessorsScreen = ()=>{
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
-        const resp = await fetch('/api/professors/', { headers });
+        const resp = await apiFetch('/api/professors/', { headers });
         if(!resp.ok) return;
         const json = await resp.json();
         setList(json);
@@ -29,7 +30,7 @@ const ProfessorsScreen = ()=>{
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch('/api/professors/', { method: 'POST', headers, body: JSON.stringify({ name }) });
+      const resp = await apiFetch('/api/professors/', { method: 'POST', headers, body: JSON.stringify({ name }) });
       if (resp.ok) {
         const data = await resp.json();
         setList((l) => [...l, data]);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Tabs, Tab, Form, Button, Table } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const DataInputScreen = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const DataInputScreen = () => {
     const payload = { subjects, professors, rooms, sections };
 
     try {
-      const resp = await fetch('/api/data/', {
+      const resp = await apiFetch('/api/data/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

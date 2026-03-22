@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const BuildingsScreen = () => {
   const [list, setList] = useState([]);
@@ -24,7 +25,7 @@ const BuildingsScreen = () => {
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
-        const r = await fetch('/api/buildings/', { headers });
+        const r = await apiFetch('/api/buildings/', { headers });
         if(!r.ok) return;
         const j = await r.json();
         setList(j);
@@ -40,7 +41,7 @@ const BuildingsScreen = () => {
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const promises = list.map(b => fetch(`/api/rooms/?building=${b.id}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []));
+        const promises = list.map(b => apiFetch(`/api/rooms/?building=${b.id}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []));
         const results = await Promise.all(promises);
         const counts = {};
         for (let i = 0; i < list.length; i++) counts[list[i].id] = Array.isArray(results[i]) ? results[i].length : (results[i].results ? results[i].results.length : 0);
@@ -65,7 +66,7 @@ const BuildingsScreen = () => {
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if(token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch('/api/buildings/', { method: 'POST', headers, body: JSON.stringify({name})});
+      const resp = await apiFetch('/api/buildings/', { method: 'POST', headers, body: JSON.stringify({name})});
       if (resp.ok){
         const json = await resp.json();
         setList(list => [...list, json]);
@@ -104,7 +105,7 @@ const BuildingsScreen = () => {
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if(token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch(`/api/buildings/${id}/`, {method: 'DELETE', headers});
+      const resp = await apiFetch(`/api/buildings/${id}/`, {method: 'DELETE', headers});
       if (resp.ok){
         setList(list => list.filter(x => x.id !== id));
         setBuildingCounts(prev => { const copy = {...prev}; delete copy[id]; return copy; });
@@ -174,7 +175,7 @@ const BuildingsScreen = () => {
                         const token = localStorage.getItem('accessToken');
                         const headers = { 'Content-Type': 'application/json' };
                         if(token) headers['Authorization'] = `Bearer ${token}`;
-                        const r = await fetch(`/api/rooms/?building=${b.id}`, { headers });
+                        const r = await apiFetch(`/api/rooms/?building=${b.id}`, { headers });
                         if(!r.ok) return setRooms([]);
                         const j = await r.json();
                         const data = Array.isArray(j) ? j : (j.results || j);
@@ -220,7 +221,7 @@ const BuildingsScreen = () => {
               if (roomFloor) payload.floor = parseInt(roomFloor) || null;
               if (roomCapacity) payload.capacity = parseInt(roomCapacity) || null;
               if (roomType) payload.room_type = roomType;
-              const resp = await fetch('/api/rooms/', { method: 'POST', headers, body: JSON.stringify(payload) });
+              const resp = await apiFetch('/api/rooms/', { method: 'POST', headers, body: JSON.stringify(payload) });
               if (resp.ok) {
                 const j = await resp.json();
                 setRooms(r => [...r, j]);

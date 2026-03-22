@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form, Modal } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 function useQuery(){
   return new URLSearchParams(useLocation().search);
@@ -25,7 +26,7 @@ const SubDepartmentsScreen = ()=>{
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
-        const resp = await fetch('/api/subdepartments/', { headers });
+        const resp = await apiFetch('/api/subdepartments/', { headers });
         if(!resp.ok) return;
         const json = await resp.json();
         const data = Array.isArray(json) ? json : (json.results || json);

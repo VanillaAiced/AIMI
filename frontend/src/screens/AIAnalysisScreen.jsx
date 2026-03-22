@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Card, Alert, Spinner, ListGroup, Button, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const AIAnalysisScreen = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const AIAnalysisScreen = () => {
         const headers = {'Content-Type': 'application/json'};
         if (token) headers['Authorization'] = `Bearer ${token}`;
         
-        const resp = await fetch('/api/schedule-entries/analyze/', { headers });
+        const resp = await apiFetch('/api/schedule-entries/analyze/', { headers });
         if (resp.ok) {
           const data = await resp.json();
           setAnalysis(data);

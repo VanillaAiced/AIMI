@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const CoursesScreen = () => {
   const [list, setList] = useState([]);
@@ -28,10 +29,10 @@ const CoursesScreen = () => {
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
         const [coursesR, rtR, depsR, subsR] = await Promise.all([
-          fetch('/api/courses/', { headers }),
-          fetch('/api/room-types/', { headers }),
-          fetch('/api/departments/', { headers }),
-          fetch('/api/subdepartments/', { headers })
+          apiFetch('/api/courses/', { headers }),
+          apiFetch('/api/room-types/', { headers }),
+          apiFetch('/api/departments/', { headers }),
+          apiFetch('/api/subdepartments/', { headers })
         ]);
         const coursesJ = coursesR.ok? await coursesR.json() : [];
         setList(Array.isArray(coursesJ)?coursesJ:(coursesJ.results||[]));
@@ -61,7 +62,7 @@ const CoursesScreen = () => {
         professor_requirement: allowAnyProf ? null : (profSubdept || null),
         allow_any_professor: !!allowAnyProf,
       };
-      const resp = await fetch('/api/courses/', { method: 'POST', headers, body: JSON.stringify(payload) });
+      const resp = await apiFetch('/api/courses/', { method: 'POST', headers, body: JSON.stringify(payload) });
       if (resp.ok) {
         const data = await resp.json();
         setList((l) => [...l, data]);

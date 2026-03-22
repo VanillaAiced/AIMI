@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const DepartmentsScreen = () => {
   const [list, setList] = useState([]);
@@ -15,7 +16,7 @@ const DepartmentsScreen = () => {
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const resp = await fetch('/api/departments/', { headers });
+        const resp = await apiFetch('/api/departments/', { headers });
         if(!resp.ok) return;
         const json = await resp.json();
         const data = Array.isArray(json) ? json : (json.results || json);
@@ -32,7 +33,7 @@ const DepartmentsScreen = () => {
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const promises = list.map(d => fetch(`/api/subdepartments/?department=${d.id}`, { headers }).then(r=>r.ok? r.json(): []).catch(()=>[]));
+        const promises = list.map(d => apiFetch(`/api/subdepartments/?department=${d.id}`, { headers }).then(r=>r.ok? r.json(): []).catch(()=>[]));
         const results = await Promise.all(promises);
         const counts = {};
         for(let i=0;i<list.length;i++) counts[list[i].id] = Array.isArray(results[i]) ? results[i].length : (results[i].results?results[i].results.length:0);
@@ -49,7 +50,7 @@ const DepartmentsScreen = () => {
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch('/api/departments/', { method: 'POST', headers, body: JSON.stringify({name})});
+      const resp = await apiFetch('/api/departments/', { method: 'POST', headers, body: JSON.stringify({name})});
       if (resp.ok) {
         const j = await resp.json();
         setList((s)=>[...s,j]);

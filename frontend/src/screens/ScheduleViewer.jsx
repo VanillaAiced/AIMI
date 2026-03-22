@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Alert, Form, Row, Col } from 'react-bootstrap';
 import AIMISuggestionsModal from '../components/AIMISuggestionsModal';
 import AIMIChat from '../components/AIMIChat';
+import { apiFetch } from '../apiClient';
 
 const ScheduleViewer = ()=>{
   const [view, setView] = useState('block');
@@ -11,7 +12,7 @@ const ScheduleViewer = ()=>{
   const [showAIMIChat, setShowAIMIChat] = useState(false);
 
   useEffect(()=>{ 
-    fetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>setEntries(j)).catch(()=>setEntries([])); 
+    apiFetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>setEntries(j)).catch(()=>setEntries([])); 
   },[]);
 
   // Get unique blocks, professors, rooms from entries

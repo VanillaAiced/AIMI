@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Form, Row, Col, Modal } from 'react-bootstrap';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const CurriculumScreen = () => {
   const { notify } = useNotification();
@@ -33,11 +34,11 @@ const CurriculumScreen = () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       try {
         const [depsR, subsR, curR, blR, coursesR] = await Promise.all([
-          fetch('/api/departments/'),
-          fetch('/api/subdepartments/'),
-          fetch('/api/curricula/'),
-          fetch('/api/blocks/'),
-          fetch('/api/courses/'),
+          apiFetch('/api/departments/'),
+          apiFetch('/api/subdepartments/'),
+          apiFetch('/api/curricula/'),
+          apiFetch('/api/blocks/'),
+          apiFetch('/api/courses/'),
         ]);
         if (depsR.ok) {
           const dv = await depsR.json();
@@ -77,7 +78,7 @@ const CurriculumScreen = () => {
     try {
       if (!curriculum) {
         // create curriculum with a sensible default name
-        const resp = await fetch('/api/curricula/', { method: 'POST', headers, body: JSON.stringify({ name: 'Curriculum', sub_department: Number(subdeptId) }) });
+        const resp = await apiFetch('/api/curricula/', { method: 'POST', headers, body: JSON.stringify({ name: 'Curriculum', sub_department: Number(subdeptId) }) });
         if (!resp.ok) {
           const errMsg = await resp.text();
           notify({ text: `Failed to create curriculum: ${errMsg}`, variant: 'danger' });
@@ -188,7 +189,7 @@ const CurriculumScreen = () => {
     // ensure courses list is loaded (already fetched on page load usually)
     if (!courses || courses.length === 0) {
       try {
-        const r = await fetch('/api/courses/');
+        const r = await apiFetch('/api/courses/');
         if (r.ok) {
           const j = await r.json();
           setCourses(Array.isArray(j) ? j : (j.results || []));

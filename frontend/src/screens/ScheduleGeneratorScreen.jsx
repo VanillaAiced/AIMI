@@ -3,6 +3,7 @@ import { Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
 import SetupProgress from '../components/SetupProgress';
+import { apiFetch } from '../apiClient';
 
 // disable generate until prerequisites exist
 
@@ -21,7 +22,7 @@ const ScheduleGeneratorScreen = ()=>{
     try {
       const token = localStorage.getItem('accessToken');
       const headers = {'Content-Type':'application/json'}; if (token) headers['Authorization']=`Bearer ${token}`;
-      const resp = await fetch('/api/schedule-entries/generate/', { method:'POST', headers });
+      const resp = await apiFetch('/api/schedule-entries/generate/', { method:'POST', headers });
       if (resp.ok) {
         notify({ text: 'Schedule generated successfully! Redirecting...', variant: 'success' });
         setTimeout(() => { window.location.href = '/admin/schedule'; }, 1000);

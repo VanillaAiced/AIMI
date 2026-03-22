@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const BlocksScreen = ()=>{
   const [list, setList] = useState([]);
@@ -21,7 +22,7 @@ const BlocksScreen = ()=>{
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const r = await fetch('/api/blocks/', { headers });
+        const r = await apiFetch('/api/blocks/', { headers });
         if(!r.ok) return;
         const j = await r.json();
         const data = Array.isArray(j)?j:(j.results||j);
@@ -34,7 +35,7 @@ const BlocksScreen = ()=>{
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const r = await fetch('/api/departments/', { headers });
+        const r = await apiFetch('/api/departments/', { headers });
         if(!r.ok) return;
         const j=await r.json();
         const d=Array.isArray(j)?j:(j.results||j);
@@ -47,7 +48,7 @@ const BlocksScreen = ()=>{
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const r = await fetch('/api/subdepartments/', { headers });
+        const r = await apiFetch('/api/subdepartments/', { headers });
         if(!r.ok) return;
         const j=await r.json();
         const d=Array.isArray(j)?j:(j.results||j);
@@ -76,7 +77,7 @@ const BlocksScreen = ()=>{
       const token = localStorage.getItem('accessToken');
       const headers = {'Content-Type':'application/json'};
       if(token) headers['Authorization']=`Bearer ${token}`;
-      const resp = await fetch('/api/blocks/',{method:'POST', headers, body: JSON.stringify({code, sub_department: subdeptId, year})});
+      const resp = await apiFetch('/api/blocks/',{method:'POST', headers, body: JSON.stringify({code, sub_department: subdeptId, year})});
       if(resp.ok){
         const j = await resp.json();
         setList(s=>[...s,j]);
@@ -94,7 +95,7 @@ const BlocksScreen = ()=>{
           const newVal = subdeptNumber===null? '': subdeptNumber;
           if(String(original) !== String(newVal)){
             const subPayload = { number: newVal };
-            await fetch(`/api/subdepartments/${subdeptId}/`, { method: 'PATCH', headers, body: JSON.stringify(subPayload) });
+            await apiFetch(`/api/subdepartments/${subdeptId}/`, { method: 'PATCH', headers, body: JSON.stringify(subPayload) });
             setSubdepartments(sd=> sd.map(x=> String(x.id)===String(subdeptId)? {...x, number: newVal} : x));
           }
         }
