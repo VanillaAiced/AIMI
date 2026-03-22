@@ -14,9 +14,10 @@ const Header = ({ user, setUser }) => {
       const token = localStorage.getItem('accessToken');
       const headers = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      await apiFetch('/api/auth/logout/', { method: 'POST', headers });
+      const response = await apiFetch('/api/auth/logout/', { method: 'POST', headers });
+      console.log('Logout response:', response.status, response.ok);
     } catch (e) {
-      // ignore
+      console.error('Logout error:', e);
     }
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
