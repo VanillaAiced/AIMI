@@ -15,8 +15,8 @@ const SubDepartmentsScreen = ()=>{
   const [blockCounts, setBlockCounts] = useState({});
   const [managingSub, setManagingSub] = useState(null);
   const [blocks, setBlocks] = useState([]);
-  const [blockCode, setBlockCode] = useState('');
   const [blockYear, setBlockYear] = useState(1);
+  const [blockNumber, setBlockNumber] = useState('01');
   const query = useQuery();
   const deptFilter = query.get('dept');
   const navigate = useNavigate();
@@ -216,7 +216,7 @@ const SubDepartmentsScreen = ()=>{
       </Table>
 
       {/* Blocks Manager Modal */}
-      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); setBlockCode(''); setBlockYear(1); }} fullscreen>
+      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); setBlockCode(''); setBlockYear(1); setBlockNumber('01'); }} fullscreen>
         <Modal.Header closeButton>
           <Modal.Title>Blocks for {managingSub?.name}</Modal.Title>
         </Modal.Header>
@@ -225,18 +225,19 @@ const SubDepartmentsScreen = ()=>{
             <h5>Create New Block</h5>
             <Form onSubmit={async (e)=>{
               e.preventDefault();
-              if(!managingSub || !blockCode) return;
+              if(!managingSub || !blockYear || !blockNumber) return;
+              const generatedCode = `${blockYear}${blockNumber}`;
               try {
                 const token = localStorage.getItem('accessToken');
                 const headers = { 'Content-Type': 'application/json' };
                 if(token) headers['Authorization'] = `Bearer ${token}`;
-                const resp = await apiFetch('/api/blocks/', { method: 'POST', headers, body: JSON.stringify({code: blockCode, sub_department: managingSub.id, year: blockYear}) });
+                const resp = await apiFetch('/api/blocks/', { method: 'POST', headers, body: JSON.stringify({code: generatedCode, sub_department: managingSub.id, year: blockYear}) });
                 if(resp.ok){
                   const j = await resp.json();
                   setBlocks(bs => [...bs, j]);
                   setBlockCounts(prev => ({...prev, [managingSub.id]: (prev[managingSub.id] || 0) + 1}));
-                  setBlockCode('');
                   setBlockYear(1);
+                  setBlockNumber('01');
                   notify({ text: `Block "${j.code}" created successfully`, variant: 'success' });
                 } else {
                   let errorMsg = 'Failed to create block';
@@ -264,15 +265,6 @@ const SubDepartmentsScreen = ()=>{
               }
             }} className="mb-3">
               <Form.Group className="mb-2">
-                <Form.Label>Block Code</Form.Label>
-                <Form.Control
-                  value={blockCode}
-                  onChange={(e)=>setBlockCode(e.target.value)}
-                  placeholder="e.g., CS-Y1"
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-2">
                 <Form.Label>Year Level</Form.Label>
                 <Form.Control
                   type="number"
@@ -280,6 +272,25 @@ const SubDepartmentsScreen = ()=>{
                   min={1}
                   onChange={(e)=>setBlockYear(parseInt(e.target.value)||1)}
                   required
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Block Number</Form.Label>
+                <Form.Control
+                  value={blockNumber}
+                  onChange={(e)=>setBlockNumber(e.target.value)}
+                  placeholder="e.g., 01, 02, 03"
+                  maxLength="2"
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Generated Block Code</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={`${blockYear}${blockNumber}`}
+                  disabled
+                  className="bg-light"
                 />
               </Form.Group>
               <Button type="submit" size="sm">Create Block</Button>
