@@ -14,12 +14,21 @@ const SetupProgress = ({ onStatus }) => {
         if (token) headers['Authorization'] = `Bearer ${token}`;
         // fetch curricula (replaces former course-offerings), plus core models
         const [deps, bds, cs, curricula, profs, users] = await Promise.all([
-          apiFetch('/api/departments/'), apiFetch('/api/buildings/'), apiFetch('/api/courses/'), apiFetch('/api/curricula/'), apiFetch('/api/professors/'), apiFetch('/api/admin/users/', { headers })
+          apiFetch('/api/departments/', { headers }), apiFetch('/api/buildings/', { headers }), apiFetch('/api/courses/', { headers }), apiFetch('/api/curricula/', { headers }), apiFetch('/api/professors/', { headers }), apiFetch('/api/admin/users/', { headers })
         ]);
         const res = {};
-        if (deps.ok) res.departments = (await deps.json()).length;
-        if (bds.ok) res.buildings = (await bds.json()).length;
-        if (cs.ok) res.courses = (await cs.json()).length;
+        if (deps.ok) {
+          const depsJson = await deps.json();
+          res.departments = Array.isArray(depsJson) ? depsJson.length : (depsJson.results ? depsJson.results.length : 0);
+        }
+        if (bds.ok) {
+          const bdsJson = await bds.json();
+          res.buildings = Array.isArray(bdsJson) ? bdsJson.length : (bdsJson.results ? bdsJson.results.length : 0);
+        }
+        if (cs.ok) {
+          const csJson = await cs.json();
+          res.courses = Array.isArray(csJson) ? csJson.length : (csJson.results ? csJson.results.length : 0);
+        }
         // map curricula -> offerings for compatibility with existing screens
         if (curricula.ok) {
           const cj = await curricula.json();
@@ -42,7 +51,7 @@ const SetupProgress = ({ onStatus }) => {
         }
         setCounts(res);
         if (onStatus) onStatus(res);
-      }catch(e){ /* ignore */ }
+      }catch(e){ console.error('SetupProgress error:', e); }
     };
     load();
   }, [onStatus]);
