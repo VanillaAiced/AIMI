@@ -132,11 +132,30 @@ const ScheduleViewer = ()=>{
 
   // Calculate filtered schedule entries based on filtered blocks
   const filteredEntries = entries.filter(e => {
-    const blockId = typeof e.block === 'object' ? e.block.id : e.block;
+    // If department selected, ensure only show entries from that department
+    if (selectedDept) {
+      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
+      // Only show if block is in filtered blocks
+      if (!filteredBlockIds.includes(blockId)) return false;
+    }
+    
     if (selectedId) {
+      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
       return String(blockId) === String(selectedId);
     }
-    return filteredBlockIds.length === 0 || filteredBlockIds.includes(blockId);
+    
+    // If no filters selected, show all entries
+    if (!selectedDept && !selectedSubDept && !selectedYear && !selectedId) {
+      return true;
+    }
+    
+    // If sub-department selected, apply block filter
+    if (selectedSubDept) {
+      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
+      return filteredBlockIds.includes(blockId);
+    }
+    
+    return false;
   });
 
   const handleApplySuggestion = (proposal) => {
