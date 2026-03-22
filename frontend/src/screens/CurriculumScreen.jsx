@@ -113,7 +113,7 @@ const CurriculumScreen = () => {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     try {
-      const r = await fetch(`/api/curricula/${curriculumId}/`, { method: 'DELETE', headers });
+      const r = await apiFetch(`/api/curricula/${curriculumId}/`, { method: 'DELETE', headers });
       if (r.ok) {
         setCurricula(c => c.filter(x => x.id !== curriculumId));
         notify({ text: 'Curriculum deleted successfully', variant: 'success' });
@@ -213,17 +213,23 @@ const CurriculumScreen = () => {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     try {
-      const r = await fetch(`/api/curricula/${coursesCurriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ courses: selectedCourseIds }) });
+      const r = await apiFetch(`/api/curricula/${coursesCurriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ courses: selectedCourseIds }) });
       if (r.ok) {
         const updated = await r.json();
         setCurricula(list => list.map(x => x.id === updated.id ? updated : x));
         setShowCoursesModal(false);
         setCoursesCurriculum(null);
         setSelectedCourseIds([]);
+        notify({ text: 'Courses updated successfully', variant: 'success' });
       } else {
-        console.error('Failed to save curriculum courses', await r.text());
+        const errMsg = await r.text();
+        console.error('Failed to save curriculum courses', errMsg);
+        notify({ text: `Failed to update courses: ${errMsg}`, variant: 'danger' });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      notify({ text: `Error: ${e.message}`, variant: 'danger' });
+    }
   };
 
   const totalUnits = () => {

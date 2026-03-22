@@ -25,7 +25,7 @@ const ScheduleGeneratorScreen = ()=>{
       const resp = await apiFetch('/api/schedule-entries/generate/', { method:'POST', headers });
       if (resp.ok) {
         notify({ text: 'Schedule generated successfully! Redirecting...', variant: 'success' });
-        setTimeout(() => { window.location.href = '/admin/schedule'; }, 1000);
+        setTimeout(() => { navigate('/admin/schedule'); }, 1500);
       } else {
         let errorMsg = 'Failed to generate schedule';
         let errText = '';
@@ -37,6 +37,7 @@ const ScheduleGeneratorScreen = ()=>{
         } catch (e) {
           if (errText) errorMsg = errText.substring(0, 150);
         }
+        console.error('Schedule generation error:', errorMsg);
         notify({ text: errorMsg, variant: 'danger' });
       }
     } catch (err) {
