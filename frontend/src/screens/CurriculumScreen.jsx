@@ -292,7 +292,7 @@ const CurriculumScreen = () => {
           <Col md={3}>
             <Form.Group>
               <Form.Label>Sub-Department</Form.Label>
-              <Form.Select value={subdeptId} onChange={e=>setSubdeptId(e.target.value)} aria-label="Sub-department">
+              <Form.Select value={subdeptId} onChange={e=>setSubdeptId(e.target.value)} aria-label="Sub-department" disabled={!deptId}>
                 <option value="">Select Sub-Department</option>
                 {subsForDept.map(s=>(<option key={s.id} value={s.id}>{s.name}</option>))}
               </Form.Select>
@@ -301,21 +301,10 @@ const CurriculumScreen = () => {
           <Col md={3}>
             <Form.Group>
               <Form.Label>Year Level</Form.Label>
-              {yearOptions.length > 0 ? (
-                <Form.Select value={yearSelected} onChange={e=>setYearSelected(e.target.value)} required>
-                  <option value="">Select Year</option>
-                  {yearOptions.map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
-                </Form.Select>
-              ) : (
-                <Form.Control 
-                  type="number" 
-                  value={yearSelected} 
-                  onChange={e=>setYearSelected(e.target.value)} 
-                  placeholder="Enter year (e.g., 1, 2, 3)" 
-                  min="1"
-                  required
-                />
-              )}
+              <Form.Select value={yearSelected} onChange={e=>setYearSelected(e.target.value)} disabled={!subdeptId} required>
+                <option value="">Select Year</option>
+                {yearOptions.map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
+              </Form.Select>
             </Form.Group>
           </Col>
           <Col md={2} className="d-flex align-items-end">
@@ -336,14 +325,14 @@ const CurriculumScreen = () => {
             </Form.Group>
             <Form.Group className="mb-2">
               <Form.Label>Sub-Department</Form.Label>
-              <Form.Select value={editingSubdeptId} onChange={e=>setEditingSubdeptId(e.target.value)}>
+              <Form.Select value={editingSubdeptId} onChange={e=>setEditingSubdeptId(e.target.value)} disabled={!editingDeptId}>
                 <option value="">Select Sub-Department</option>
                 {(editingDeptId? subdepartments.filter(s=> (s.department===Number(editingDeptId) || (s.department && s.department.id===Number(editingDeptId)))) : []).map(s=>(<option key={s.id} value={s.id}>{s.name}</option>))}
               </Form.Select>
             </Form.Group>
             <Form.Group className="mb-2">
               <Form.Label>Year</Form.Label>
-              <Form.Select value={editingYear} onChange={e=>setEditingYear(e.target.value)}>
+              <Form.Select value={editingYear} onChange={e=>setEditingYear(e.target.value)} disabled={!editingSubdeptId}>
                 <option value="">Select Year</option>
                 {Array.from(new Set(blocks.filter(b=> (b.sub_department===Number(editingSubdeptId) || (b.sub_department && b.sub_department.id===Number(editingSubdeptId)))).map(b=>Number(b.year)))).filter(n=>!isNaN(n)).sort((a,b)=>a-b).map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
               </Form.Select>
