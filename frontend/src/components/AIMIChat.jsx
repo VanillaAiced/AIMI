@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Form, Button, Card, ListGroup, Spinner, Alert } from 'react-bootstrap';
+import { apiFetch } from '../apiClient';
 
 const AIMIChat = () => {
   const [messages, setMessages] = useState([

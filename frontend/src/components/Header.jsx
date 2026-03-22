@@ -4,7 +4,6 @@ import { LinkContainer } from 'react-router-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from './NotificationProvider';
 import { apiFetch } from '../apiClient';
-import { apiFetch } from '../apiClient';
 
 const Header = ({ user, setUser }) => {
   const navigate = useNavigate();
