@@ -24,9 +24,7 @@ class SubDepartmentSerializer(serializers.ModelSerializer):
 
 
 class BlockSerializer(serializers.ModelSerializer):
-    # helpful display fields
-    sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
-    department_name = serializers.CharField(source='sub_department.department.name', read_only=True)
+    sub_department = SubDepartmentSerializer(read_only=True)
     class Meta:
         model = models.Block
         fields = '__all__'
