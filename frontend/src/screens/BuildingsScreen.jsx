@@ -306,10 +306,7 @@ const BuildingsScreen = () => {
                       onClick={async ()=>{
                         if(!window.confirm('Delete room?')) return;
                         try {
-                          const token = localStorage.getItem('accessToken');
-                          const headers = { 'Content-Type': 'application/json' };
-                          if(token) headers['Authorization'] = `Bearer ${token}`;
-                          const resp = await fetch(`/api/rooms/${r.id}/`, { method: 'DELETE', headers });
+                          const resp = await apiFetch(`/api/rooms/${r.id}/`, { method: 'DELETE' });
                           if (resp.ok) {
                             setRooms(rs => rs.filter(x => x.id !== r.id));
                             setBuildingCounts(prev => ({...prev, [selectedBuilding.id]: Math.max(0, (prev[selectedBuilding.id] || rooms.length) - 1)}));
