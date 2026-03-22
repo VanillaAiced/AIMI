@@ -17,8 +17,7 @@ from base.models import Department, SubDepartment, Building, Block, Room, RoomTy
 
 # Create School
 school, _ = School.objects.get_or_create(
-    name='Default School',
-    defaults={'code': 'DEFAULT'}
+    name='Default School'
 )
 print("✓ School created")
 
