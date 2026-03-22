@@ -365,7 +365,7 @@ const CurriculumScreen = () => {
             <tr key={idx}>
               <td>{r.department? (r.department.name || r.department) : ''}</td>
               <td>{r.subdepartment? (r.subdepartment.name || r.subdepartment) : ''}</td>
-              <td>{Array.isArray(r.years) && r.years.length ? r.years.map(y=> `${ordinal(y)} Year`).join(', ') : ''}</td>
+              <td>{Array.isArray(r.years) && r.years.length ? `${ordinal(r.years[0])} Year` : ''}</td>
               <td>
                 <button className="btn btn-sm btn-outline-secondary me-2" onClick={()=>openCourses(r.curriculum)}>Courses</button>
                 <button className="btn btn-sm btn-outline-primary me-2" onClick={()=>handleEdit(r.curriculum)}>Edit</button>
