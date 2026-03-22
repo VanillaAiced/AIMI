@@ -37,8 +37,7 @@ room_type, _ = RoomType.objects.get_or_create(
 
 # Create default Building if needed
 building, _ = Building.objects.get_or_create(
-    name='Main Building',
-    defaults={'school': school}
+    name='Main Building'
 )
 
 # Create a sample Room for testing (users should add their own)
