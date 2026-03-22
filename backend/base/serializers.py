@@ -375,7 +375,6 @@ class ScheduleEntrySerializer(serializers.ModelSerializer):
         if obj.block:
             return {
                 'id': obj.block.id,
-                'code': obj.block.code,
-                'name': obj.block.name
+                'code': obj.block.code
             }
         return None
