@@ -68,11 +68,6 @@ const ScheduleViewer = ()=>{
       })
     : subDepartments;
 
-  // Get unique years from filtered blocks
-  const uniqueYears = Array.from(new Set(
-    filteredBlocks.filter(b => b.year).map(b => String(b.year))
-  )).sort((a, b) => parseInt(a) - parseInt(b));
-
   // Calculate filtered blocks based on selections
   const filteredBlocks = allBlocks.filter(block => {
     // Filter by department (via sub-department)
@@ -94,6 +89,11 @@ const ScheduleViewer = ()=>{
     }
     return true;
   });
+
+  // Get unique years from filtered blocks
+  const uniqueYears = Array.from(new Set(
+    filteredBlocks.filter(b => b.year).map(b => String(b.year))
+  )).sort((a, b) => parseInt(a) - parseInt(b));
 
   // Get block IDs from filtered blocks
   const filteredBlockIds = filteredBlocks.map(b => b.id);
