@@ -32,8 +32,7 @@ print("\nCreating essential resources...")
 
 # Create default RoomType if needed
 room_type, _ = RoomType.objects.get_or_create(
-    name='Lecture Hall',
-    defaults={'description': 'Standard classroom'}
+    name='Lecture Hall'
 )
 
 # Create default Building if needed
