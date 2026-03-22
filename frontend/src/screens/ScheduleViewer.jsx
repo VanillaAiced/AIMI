@@ -3,11 +3,13 @@ import { Table, Button, Alert, Form, Row, Col, Container } from 'react-bootstrap
 import { useNavigate } from 'react-router-dom';
 import AIMISuggestionsModal from '../components/AIMISuggestionsModal';
 import AIMIChat from '../components/AIMIChat';
+import Loader from '../components/Loader';
 import { apiFetch } from '../apiClient';
 
 const ScheduleViewer = ()=>{
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   // Hierarchical Filter States
   const [departments, setDepartments] = useState([]);
@@ -24,22 +26,22 @@ const ScheduleViewer = ()=>{
 
   // Initial Data Fetch
   useEffect(()=>{ 
-    apiFetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>{
-      const data = Array.isArray(j) ? j : (j.results || []);
-      setEntries(data);
-    }).catch(()=>setEntries([]));
-
-    apiFetch('/api/departments/').then(r=>r.ok? r.json():[]).then(j=>{
-      setDepartments(Array.isArray(j) ? j : (j.results || []));
-    });
-
-    apiFetch('/api/subdepartments/').then(r=>r.ok? r.json():[]).then(j=>{
-      setSubDepartments(Array.isArray(j) ? j : (j.results || []));
-    });
-
-    apiFetch('/api/blocks/').then(r=>r.ok? r.json():[]).then(j=>{
-      setAllBlocks(Array.isArray(j) ? j : (j.results || []));
-    });
+    setLoading(true);
+    Promise.all([
+      apiFetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>{
+        const data = Array.isArray(j) ? j : (j.results || []);
+        setEntries(data);
+      }).catch(()=>setEntries([])),
+      apiFetch('/api/departments/').then(r=>r.ok? r.json():[]).then(j=>{
+        setDepartments(Array.isArray(j) ? j : (j.results || []));
+      }),
+      apiFetch('/api/subdepartments/').then(r=>r.ok? r.json():[]).then(j=>{
+        setSubDepartments(Array.isArray(j) ? j : (j.results || []));
+      }),
+      apiFetch('/api/blocks/').then(r=>r.ok? r.json():[]).then(j=>{
+        setAllBlocks(Array.isArray(j) ? j : (j.results || []));
+      })
+    ]).finally(() => setLoading(false));
   },[]);
 
   // Reset sub-dept and year when department changes
@@ -115,84 +117,90 @@ const ScheduleViewer = ()=>{
     <div className="mb-3"><Button size="sm" variant="secondary" onClick={()=>navigate('/admin')}>Back to Admin</Button></div>
     <h3>Schedule Viewer</h3>
     
-    <div className="mb-4">
-      <Row className="g-3 align-items-end">
-        <Col md={3}>
-          <Form.Group>
-            <Form.Label className="small mb-2 fw-bold">Department</Form.Label>
-            <Form.Select size="sm" value={selectedDept} onChange={e=>setSelectedDept(e.target.value)}>
-              <option value="">All Departments</option>
-              {departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={3}>
-          <Form.Group>
-            <Form.Label className="small mb-2 fw-bold">Sub-Department</Form.Label>
-            <Form.Select size="sm" value={selectedSubDept} onChange={e=>setSelectedSubDept(e.target.value)}>
-              <option value="">All Sub-Departments</option>
-              {filteredSubDepts.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={2}>
-          <Form.Group>
-            <Form.Label className="small mb-2 fw-bold">Year Level</Form.Label>
-            <Form.Select 
-              size="sm" 
-              value={selectedYear} 
-              onChange={e=>setSelectedYear(e.target.value)}
-            >
-              <option value="">All Years</option>
-              {uniqueYears.map(year=><option key={year} value={year}>{year}</option>)}
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={2}>
-          <Form.Group>
-            <Form.Label className="small mb-2 fw-bold">Block</Form.Label>
-            <Form.Select size="sm" value={selectedId} onChange={e=>setSelectedId(e.target.value)}>
-              <option value="">All Blocks</option>
-              {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code || b.name}</option>)}
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={2} className="d-flex gap-2">
-          <Button size="sm" variant="info" onClick={() => setShowAIMIChat(!showAIMIChat)} title="AIMI Chat">
-            <img src="/images/aimi-logo.png" alt="AIMI" style={{ height: '14px', width: '14px', marginRight: '4px' }} />
-            CHAT
-          </Button>
-          <Button size="sm" variant="success" onClick={() => setShowAIMIModal(true)} title="AI-PTIMIZE">
-            ✨ PTIMIZE
-          </Button>
-        </Col>
-      </Row>
-    </div>
+    {loading ? (
+      <Loader message="Loading schedule data..." />
+    ) : (
+      <>
+        <div className="mb-4">
+          <Row className="g-3 align-items-end">
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="small mb-2 fw-bold">Department</Form.Label>
+                <Form.Select size="sm" value={selectedDept} onChange={e=>setSelectedDept(e.target.value)}>
+                  <option value="">All Departments</option>
+                  {departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label className="small mb-2 fw-bold">Sub-Department</Form.Label>
+                <Form.Select size="sm" value={selectedSubDept} onChange={e=>setSelectedSubDept(e.target.value)}>
+                  <option value="">All Sub-Departments</option>
+                  {filteredSubDepts.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label className="small mb-2 fw-bold">Year Level</Form.Label>
+                <Form.Select 
+                  size="sm" 
+                  value={selectedYear} 
+                  onChange={e=>setSelectedYear(e.target.value)}
+                >
+                  <option value="">All Years</option>
+                  {uniqueYears.map(year=><option key={year} value={year}>{year}</option>)}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label className="small mb-2 fw-bold">Block</Form.Label>
+                <Form.Select size="sm" value={selectedId} onChange={e=>setSelectedId(e.target.value)}>
+                  <option value="">All Blocks</option>
+                  {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code || b.name}</option>)}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={2} className="d-flex gap-2">
+              <Button size="sm" variant="info" onClick={() => setShowAIMIChat(!showAIMIChat)} title="AIMI Chat">
+                <img src="/images/aimi-logo.png" alt="AIMI" style={{ height: '14px', width: '14px', marginRight: '4px' }} />
+                CHAT
+              </Button>
+              <Button size="sm" variant="success" onClick={() => setShowAIMIModal(true)} title="AI-PTIMIZE">
+                ✨ PTIMIZE
+              </Button>
+            </Col>
+          </Row>
+        </div>
 
-    {showAIMIChat && (
-      <div className="mb-3">
-        <AIMIChat />
-      </div>
+        {showAIMIChat && (
+          <div className="mb-3">
+            <AIMIChat />
+          </div>
+        )}
+
+        {entries.length === 0 && <Alert variant="info">No schedule data available. Generate a schedule in the Admin Dashboard.</Alert>}
+        {entries.length > 0 && filteredEntries.length === 0 && <Alert variant="warning">No schedule entries match your filters.</Alert>}
+        
+        {filteredEntries.length > 0 && (
+          <Table striped hover size="sm">
+            <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th><th>Block</th></tr></thead>
+            <tbody>{filteredEntries.map(e=>(<tr key={e.id}>
+              <td>{e.time_slot? e.time_slot.day: '-'}</td>
+              <td>{e.time_slot? (e.time_slot.start_time+'-'+e.time_slot.end_time): '-'}</td>
+              <td>{e.course? e.course.code: '-'}</td>
+              <td>{e.room? e.room.name: '-'}</td>
+              <td>{e.professor? e.professor.name: '-'}</td>
+              <td>{typeof e.block === 'object' ? (e.block.code || e.block.name) : `Block ${e.block}`}</td>
+            </tr>))}</tbody>
+          </Table>
+        )}
+
+        <AIMISuggestionsModal show={showAIMIModal} onHide={() => setShowAIMIModal(false)} onApplySuggestion={handleApplySuggestion} />
+      </>
     )}
-
-    {entries.length === 0 && <Alert variant="info">No schedule data available. Generate a schedule in the Admin Dashboard.</Alert>}
-    {entries.length > 0 && filteredEntries.length === 0 && <Alert variant="warning">No schedule entries match your filters.</Alert>}
-    
-    {filteredEntries.length > 0 && (
-      <Table striped hover size="sm">
-        <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th><th>Block</th></tr></thead>
-        <tbody>{filteredEntries.map(e=>(<tr key={e.id}>
-          <td>{e.time_slot? e.time_slot.day: '-'}</td>
-          <td>{e.time_slot? (e.time_slot.start_time+'-'+e.time_slot.end_time): '-'}</td>
-          <td>{e.course? e.course.code: '-'}</td>
-          <td>{e.room? e.room.name: '-'}</td>
-          <td>{e.professor? e.professor.name: '-'}</td>
-          <td>{typeof e.block === 'object' ? (e.block.code || e.block.name) : `Block ${e.block}`}</td>
-        </tr>))}</tbody>
-      </Table>
-    )}
-
-    <AIMISuggestionsModal show={showAIMIModal} onHide={() => setShowAIMIModal(false)} onApplySuggestion={handleApplySuggestion} />
   </Container>);
 };
 

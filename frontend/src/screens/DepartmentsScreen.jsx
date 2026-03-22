@@ -2,17 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import Loader from '../components/Loader';
 import { apiFetch } from '../apiClient';
 
 const DepartmentsScreen = () => {
   const [list, setList] = useState([]);
   const [name, setName] = useState('');
   const [subdeptCounts, setSubdeptCounts] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const { notify } = useNotification();
 
   useEffect(()=>{
     (async ()=>{
       try{
+        setLoading(true);
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -22,6 +27,9 @@ const DepartmentsScreen = () => {
         const data = Array.isArray(json) ? json : (json.results || json);
         setList(data);
       }catch(e){}
+      finally {
+        setLoading(false);
+      }
     })();
   },[]);
 
@@ -47,6 +55,7 @@ const DepartmentsScreen = () => {
   const add = async (e)=>{
     e.preventDefault();
     try {
+      setCreating(true);
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -91,11 +100,15 @@ const DepartmentsScreen = () => {
     } catch (err) {
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
+    finally {
+      setCreating(false);
+    }
   };
 
   const remove = async (id)=>{
     if (!window.confirm('Delete this department?')) return;
     try {
+      setDeleting(id);
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -110,6 +123,9 @@ const DepartmentsScreen = () => {
     } catch (err) {
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
+    finally {
+      setDeleting(null);
+    }
   };
 
   const openSubDepartments = (deptId)=>{
@@ -122,23 +138,33 @@ const DepartmentsScreen = () => {
         <Button size="sm" variant="secondary" onClick={()=>navigate('/admin')}>Back</Button>
       </div>
       <h3>Departments</h3>
-      <Form onSubmit={add} className="mb-3">
-        <Form.Control value={name} onChange={(e)=>setName(e.target.value)} placeholder="Department name" required />
-        <Button type="submit" className="mt-2">Create</Button>
-      </Form>
-      <Table striped>
-        <thead><tr><th>Name</th><th>Sub-departments</th><th></th></tr></thead>
-        <tbody>{list.map(d=> (
-          <tr key={d.id}>
-            <td>{d.name}</td>
-            <td style={{width:120, textAlign:'center'}}>{subdeptCounts[d.id]||0}</td>
-            <td>
-              <Button size="sm" variant="secondary" onClick={()=>openSubDepartments(d.id)}>Sub-departments</Button>{' '}
-              <Button size="sm" variant="danger" onClick={()=>remove(d.id)}>Delete</Button>
-            </td>
-          </tr>
-        ))}</tbody>
-      </Table>
+      {loading ? (
+        <Loader message="Loading departments..." />
+      ) : (
+        <>
+          <Form onSubmit={add} className="mb-3">
+            <Form.Control value={name} onChange={(e)=>setName(e.target.value)} placeholder="Department name" required disabled={creating} />
+            <Button type="submit" className="mt-2" disabled={creating}>
+              {creating ? 'Creating...' : 'Create'}
+            </Button>
+          </Form>
+          <Table striped>
+            <thead><tr><th>Name</th><th>Sub-departments</th><th></th></tr></thead>
+            <tbody>{list.map(d=> (
+              <tr key={d.id}>
+                <td>{d.name}</td>
+                <td style={{width:120, textAlign:'center'}}>{subdeptCounts[d.id]||0}</td>
+                <td>
+                  <Button size="sm" variant="secondary" onClick={()=>openSubDepartments(d.id)} disabled={deleting !== null}>Sub-departments</Button>{' '}
+                  <Button size="sm" variant="danger" onClick={()=>remove(d.id)} disabled={deleting !== null}>
+                    {deleting === d.id ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </td>
+              </tr>
+            ))}</tbody>
+          </Table>
+        </>
+      )}
     </div>
   );
 };

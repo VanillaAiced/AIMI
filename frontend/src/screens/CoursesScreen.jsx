@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import Loader from '../components/Loader';
 import { apiFetch } from '../apiClient';
 
 const CoursesScreen = () => {
@@ -19,12 +20,16 @@ const CoursesScreen = () => {
   const [profDept, setProfDept] = useState('');
   const [profSubdept, setProfSubdept] = useState('');
   const [allowAnyProf, setAllowAnyProf] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const navigate = useNavigate();
   const { notify } = useNotification();
 
   useEffect(()=>{
     (async ()=>{
       try{
+        setLoading(true);
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
@@ -43,12 +48,16 @@ const CoursesScreen = () => {
         const subsJ = subsR.ok? await subsR.json() : [];
         setSubdepartments(Array.isArray(subsJ)?subsJ:(subsJ.results||[]));
       }catch(e){}
+      finally {
+        setLoading(false);
+      }
     })();
   },[]);
 
   const add = async (e) => {
     e.preventDefault();
     try {
+      setCreating(true);
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -101,6 +110,9 @@ const CoursesScreen = () => {
     } catch (err) {
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
+    finally {
+      setCreating(false);
+    }
   };
 
   // Auto-generate code from name unless user has manually edited the code field
@@ -124,6 +136,7 @@ const CoursesScreen = () => {
   const remove = async (id) => {
     if(!window.confirm('Delete this course?')) return;
     try {
+      setDeleting(id);
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if(token) headers['Authorization'] = `Bearer ${token}`;
@@ -151,6 +164,9 @@ const CoursesScreen = () => {
     } catch (err) {
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
+    finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -159,151 +175,168 @@ const CoursesScreen = () => {
         <Button size="sm" variant="secondary" onClick={()=>navigate('/admin')}>Back</Button>
       </div>
       <h3>Courses</h3>
-      <Form onSubmit={add} className="mb-3">
-        <Form.Group className="mb-2">
-          <Form.Label>Course Name</Form.Label>
-          <Form.Control
-            value={name}
-            onChange={(e)=>setName(e.target.value)}
-            placeholder="Enter course name"
-            required
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label>Course Code</Form.Label>
-          <Form.Control
-            value={code}
-            onChange={e=>onCodeChange(e.target.value)}
-            placeholder="Auto-generated or custom"
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label>Duration (minutes)</Form.Label>
-          <Form.Control
-            type="number"
-            value={duration}
-            onChange={e=>setDuration(e.target.value)}
-            placeholder="e.g., 90"
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label>Frequency per Week</Form.Label>
-          <Form.Control
-            type="number"
-            value={frequency}
-            onChange={e=>setFrequency(e.target.value)}
-            placeholder="e.g., 1"
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label>Units</Form.Label>
-          <Form.Control
-            type="number"
-            value={units}
-            onChange={e=>setUnits(e.target.value)}
-            placeholder="e.g., 3"
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label>Room Requirement (Optional)</Form.Label>
-          <Form.Select value={roomRequirement} onChange={e=>setRoomRequirement(e.target.value)}>
-            <option value="">-- No specific room type --</option>
-            {roomTypes.map(r=> <option key={r.id} value={r.id}>{r.name}</option>)}
-          </Form.Select>
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label>Professor Department (Optional)</Form.Label>
-          <Form.Select
-            value={profDept}
-            onChange={e=>{
-              setProfDept(e.target.value);
-              setProfSubdept('');
-              setAllowAnyProf(false);
-            }}
-          >
-            <option value="">-- No specific professor --</option>
-            {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
-          </Form.Select>
-        </Form.Group>
-
-        {profDept && (
-          <>
+      {loading ? (
+        <Loader message="Loading courses..." />
+      ) : (
+        <>
+          <Form onSubmit={add} className="mb-3">
             <Form.Group className="mb-2">
-              <Form.Check
-                type="checkbox"
-                id="any-prof"
-                label="Any professor in this department"
-                checked={allowAnyProf}
-                onChange={e=>{
-                  setAllowAnyProf(e.target.checked);
-                  if(e.target.checked) setProfSubdept('');
-                }}
+              <Form.Label>Course Name</Form.Label>
+              <Form.Control
+                value={name}
+                onChange={(e)=>setName(e.target.value)}
+                placeholder="Enter course name"
+                required
+                disabled={creating}
               />
             </Form.Group>
 
-            {!allowAnyProf && (
-              <Form.Group className="mb-2">
-                <Form.Label>Specific Sub-Department</Form.Label>
-                <Form.Select
-                  value={profSubdept}
-                  onChange={e=>{
-                    setProfSubdept(e.target.value);
-                    setAllowAnyProf(false);
-                  }}
-                >
-                  <option value="">-- Any sub-department --</option>
-                  {subdepartments.filter(s=> String(s.department) === String(profDept) || (s.department && String(s.department.id) === String(profDept))).map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Form.Select>
-              </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Course Code</Form.Label>
+              <Form.Control
+                value={code}
+                onChange={e=>onCodeChange(e.target.value)}
+                placeholder="Auto-generated or custom"
+                disabled={creating}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Duration (minutes)</Form.Label>
+              <Form.Control
+                type="number"
+                value={duration}
+                onChange={e=>setDuration(e.target.value)}
+                placeholder="e.g., 90"
+                disabled={creating}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Frequency per Week</Form.Label>
+              <Form.Control
+                type="number"
+                value={frequency}
+                onChange={e=>setFrequency(e.target.value)}
+                placeholder="e.g., 1"
+                disabled={creating}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Units</Form.Label>
+              <Form.Control
+                type="number"
+                value={units}
+                onChange={e=>setUnits(e.target.value)}
+                placeholder="e.g., 3"
+                disabled={creating}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Room Requirement (Optional)</Form.Label>
+              <Form.Select value={roomRequirement} onChange={e=>setRoomRequirement(e.target.value)} disabled={creating}>
+                <option value="">-- No specific room type --</option>
+                {roomTypes.map(r=> <option key={r.id} value={r.id}>{r.name}</option>)}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Professor Department (Optional)</Form.Label>
+              <Form.Select
+                value={profDept}
+                onChange={e=>{
+                  setProfDept(e.target.value);
+                  setProfSubdept('');
+                  setAllowAnyProf(false);
+                }}
+                disabled={creating}
+              >
+                <option value="">-- No specific professor --</option>
+                {departments.map(d=> <option key={d.id} value={d.id}>{d.name}</option>)}
+              </Form.Select>
+            </Form.Group>
+
+            {profDept && (
+              <>
+                <Form.Group className="mb-2">
+                  <Form.Check
+                    type="checkbox"
+                    id="any-prof"
+                    label="Any professor in this department"
+                    checked={allowAnyProf}
+                    onChange={e=>{
+                      setAllowAnyProf(e.target.checked);
+                      if(e.target.checked) setProfSubdept('');
+                    }}
+                    disabled={creating}
+                  />
+                </Form.Group>
+
+                {!allowAnyProf && (
+                  <Form.Group className="mb-2">
+                    <Form.Label>Specific Sub-Department</Form.Label>
+                    <Form.Select
+                      value={profSubdept}
+                      onChange={e=>{
+                        setProfSubdept(e.target.value);
+                        setAllowAnyProf(false);
+                      }}
+                      disabled={creating}
+                    >
+                      <option value="">-- Any sub-department --</option>
+                      {subdepartments.filter(s=> String(s.department) === String(profDept) || (s.department && String(s.department.id) === String(profDept))).map(s=> <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        <Button type="submit">Create</Button>
-      </Form>
+            <Button type="submit" disabled={creating}>
+              {creating ? 'Creating...' : 'Create'}
+            </Button>
+          </Form>
 
-      <Table striped>
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Room</th>
-            <th>Professor</th>
-            <th>Duration</th>
-            <th>Frequency</th>
-            <th>Units</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map(c=>(
-            <tr key={c.id}>
-              <td>{c.code}</td>
-              <td>{c.name}</td>
-              <td>{c.room_requirement_name || (c.room_requirement || '')}</td>
-              <td>{c.allow_any_professor ? ('Any (' + (c.professor_requirement_department_name || '') + ')') : (c.professor_requirement_name || c.professor_requirement || '')}</td>
-              <td>{c.duration_minutes || ''}</td>
-              <td>{c.frequency_per_week || ''}</td>
-              <td>{c.units || ''}</td>
-              <td>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={()=>remove(c.id)}
-                >
-                  Delete
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+          <Table striped>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Room</th>
+                <th>Professor</th>
+                <th>Duration</th>
+                <th>Frequency</th>
+                <th>Units</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(c=>(
+                <tr key={c.id}>
+                  <td>{c.code}</td>
+                  <td>{c.name}</td>
+                  <td>{c.room_requirement_name || (c.room_requirement || '')}</td>
+                  <td>{c.allow_any_professor ? ('Any (' + (c.professor_requirement_department_name || '') + ')') : (c.professor_requirement_name || c.professor_requirement || '')}</td>
+                  <td>{c.duration_minutes || ''}</td>
+                  <td>{c.frequency_per_week || ''}</td>
+                  <td>{c.units || ''}</td>
+                  <td>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={()=>remove(c.id)}
+                      disabled={deleting !== null}
+                    >
+                      {deleting === c.id ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
+      )}
     </div>
   );
 };

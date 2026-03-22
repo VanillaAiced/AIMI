@@ -2,17 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import Loader from '../components/Loader';
 import { apiFetch } from '../apiClient';
 
 const ProfessorsScreen = ()=>{
   const [list, setList] = useState([]);
   const [name, setName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const navigate = useNavigate();
   const { notify } = useNotification();
 
   useEffect(()=>{
     (async ()=>{
       try{
+        setLoading(true);
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
@@ -21,12 +26,16 @@ const ProfessorsScreen = ()=>{
         const json = await resp.json();
         setList(json);
       }catch(e){}
+      finally {
+        setLoading(false);
+      }
     })();
   },[]);
 
   const add = async (e) => {
     e.preventDefault();
     try {
+      setCreating(true);
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -60,11 +69,15 @@ const ProfessorsScreen = ()=>{
     } catch (err) {
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
+    finally {
+      setCreating(false);
+    }
   };
 
   const remove = async (id) => {
     if (!window.confirm('Delete this professor?')) return;
     try {
+      setDeleting(id);
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -79,6 +92,9 @@ const ProfessorsScreen = ()=>{
     } catch (err) {
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
+    finally {
+      setDeleting(null);
+    }
   };
 
   return (
@@ -87,36 +103,47 @@ const ProfessorsScreen = ()=>{
         <Button size="sm" variant="secondary" onClick={()=>navigate('/admin')}>Back</Button>
       </div>
       <h3>Professors</h3>
-      <Form onSubmit={add} className="mb-3">
-        <Form.Group className="mb-2">
-          <Form.Label>Professor Name</Form.Label>
-          <Form.Control
-            value={name}
-            onChange={(e)=>setName(e.target.value)}
-            placeholder="Enter professor name"
-            required
-          />
-        </Form.Group>
-        <Button type="submit">Create</Button>
-      </Form>
-      <Table striped>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map(p=>(
-            <tr key={p.id}>
-              <td>{p.name}</td>
-              <td>
-                <Button size="sm" variant="danger" onClick={()=>remove(p.id)}>Delete</Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+      {loading ? (
+        <Loader message="Loading professors..." />
+      ) : (
+        <>
+          <Form onSubmit={add} className="mb-3">
+            <Form.Group className="mb-2">
+              <Form.Label>Professor Name</Form.Label>
+              <Form.Control
+                value={name}
+                onChange={(e)=>setName(e.target.value)}
+                placeholder="Enter professor name"
+                required
+                disabled={creating}
+              />
+            </Form.Group>
+            <Button type="submit" disabled={creating}>
+              {creating ? 'Creating...' : 'Create'}
+            </Button>
+          </Form>
+          <Table striped>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(p=>(
+                <tr key={p.id}>
+                  <td>{p.name}</td>
+                  <td>
+                    <Button size="sm" variant="danger" onClick={()=>remove(p.id)} disabled={deleting !== null}>
+                      {deleting === p.id ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
+      )}
     </div>
   );
 };

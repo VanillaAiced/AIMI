@@ -3,6 +3,7 @@ import { Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
 import SetupProgress from '../components/SetupProgress';
+import Loader from '../components/Loader';
 import { apiFetch } from '../apiClient';
 
 // disable generate until prerequisites exist
@@ -54,8 +55,14 @@ const ScheduleGeneratorScreen = ()=>{
       </Row>
       <SetupProgress onStatus={onStatus} />
       <div className="mt-3">
-        <Button onClick={run} disabled={running || !ready}>{running? 'Running...':'Generate Schedule'}</Button>
-        {!ready && <div className="text-muted small mt-2">Generate disabled — please ensure Courses, Buildings, Professors, and Curricula exist.</div>}
+        {running ? (
+          <Loader message="Generating schedule... This may take a moment" />
+        ) : (
+          <>
+            <Button onClick={run} disabled={running || !ready}>{running? 'Running...':'Generate Schedule'}</Button>
+            {!ready && <div className="text-muted small mt-2">Generate disabled — please ensure Courses, Buildings, Professors, and Curricula exist.</div>}
+          </>
+        )}
       </div>
     </div>
   );
