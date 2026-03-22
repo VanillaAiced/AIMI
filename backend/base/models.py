@@ -125,6 +125,7 @@ class Course(models.Model):
 	duration_minutes = models.IntegerField(help_text='Duration in minutes per session')
 	frequency_per_week = models.IntegerField(default=1)
 	units = models.IntegerField(default=0)
+	time_slot = models.ForeignKey(TimeSlot, on_delete=models.SET_NULL, null=True, blank=True, related_name='courses')
 	# compatibility fields
 	owner_session = models.CharField(max_length=100, blank=True, null=True)
 	created_at = models.DateTimeField(auto_now_add=True)

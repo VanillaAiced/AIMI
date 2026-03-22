@@ -119,10 +119,12 @@ class TimeSlotSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     room_requirement = serializers.PrimaryKeyRelatedField(queryset=models.RoomType.objects.all(), allow_null=True, required=False)
     professor_requirement = serializers.PrimaryKeyRelatedField(queryset=models.SubDepartment.objects.all(), allow_null=True, required=False)
+    time_slot = serializers.PrimaryKeyRelatedField(queryset=models.TimeSlot.objects.all(), allow_null=True, required=False)
     # display convenience fields
     room_requirement_name = serializers.CharField(source='room_requirement.name', read_only=True)
     professor_requirement_name = serializers.CharField(source='professor_requirement.name', read_only=True)
     professor_requirement_department_name = serializers.CharField(source='professor_requirement.department.name', read_only=True)
+    time_slot_display = serializers.CharField(source='time_slot.__str__', read_only=True)
 
     class Meta:
         model = models.Course
@@ -300,6 +302,8 @@ class StudentSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True)
     sub_department_name = serializers.CharField(source='sub_department.name', read_only=True)
     block_code = serializers.CharField(source='block.code', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
     class Meta:
         model = models.Student
         fields = '__all__'
