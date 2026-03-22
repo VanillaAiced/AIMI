@@ -17,17 +17,13 @@ services:
         value: "*.render.com,localhost"
       - key: CORS_ALLOWED_ORIGINS
         value: "https://your-vercel-frontend.vercel.app"
-      - fromGroup: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aimi_postgres
+          property: connectionString
 
-  - type: pserv
-    name: aimi-postgres
-    env: postgresql
+databases:
+  - name: aimi_postgres
+    engine: postgres
     plan: free
-    ipAllowList: []
-    envVars:
-      - key: POSTGRES_DB
-        value: aimi_db
-      - key: POSTGRES_USER
-        value: aimi_user
-      - key: POSTGRES_PASSWORD
-        generateValue: true
+    version: 15
