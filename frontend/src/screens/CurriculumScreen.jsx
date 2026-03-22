@@ -301,10 +301,22 @@ const CurriculumScreen = () => {
           <Col md={3}>
             <Form.Group>
               <Form.Label>Year Level</Form.Label>
-              <Form.Select value={yearSelected} onChange={e=>setYearSelected(e.target.value)} disabled={!subdeptId} required>
-                <option value="">Select Year</option>
-                {yearOptions.map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
-              </Form.Select>
+              {yearOptions.length > 0 ? (
+                <Form.Select value={yearSelected} onChange={e=>setYearSelected(e.target.value)} disabled={!subdeptId} required>
+                  <option value="">Select Year</option>
+                  {yearOptions.map(y=>(<option key={y} value={y}>{ordinal(y)} Year</option>))}
+                </Form.Select>
+              ) : (
+                <Form.Control 
+                  type="number" 
+                  value={yearSelected} 
+                  onChange={e=>setYearSelected(e.target.value)} 
+                  placeholder="Enter year (e.g., 1, 2, 3)" 
+                  min="1"
+                  disabled={!subdeptId}
+                  required
+                />
+              )}
             </Form.Group>
           </Col>
           <Col md={2} className="d-flex align-items-end">
