@@ -35,3 +35,13 @@ try:
 except Exception as e:
     print('Error promoting user:', e)
     sys.exit(0)
+    
+    # Ensure profile exists
+    profile = getattr(user, 'profile', None)
+    from base.models import Profile
+    if profile is None:
+        Profile.objects.create(user=user, role='admin')
+        print(f'Created Profile for {user.username}')
+except Exception as e:
+    print('Error promoting user:', e)
+    sys.exit(0)
