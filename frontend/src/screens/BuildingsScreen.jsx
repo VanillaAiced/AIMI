@@ -16,6 +16,7 @@ const BuildingsScreen = () => {
   const [roomCapacity, setRoomCapacity] = useState('');
   const [roomType, setRoomType] = useState('LECTURE');
   const [deletingRoomId, setDeletingRoomId] = useState(null);
+  const navigate = useNavigate();
   const { notify } = useNotification();
 
   useEffect(()=>{
