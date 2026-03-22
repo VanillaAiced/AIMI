@@ -138,7 +138,10 @@ const CoursesScreen = () => {
     try {
       setDeleting(id);
       console.log('Deleting course:', id);
-      const resp = await apiFetch(`/api/courses/${id}/`, { method: 'DELETE' });
+      const token = localStorage.getItem('accessToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await apiFetch(`/api/courses/${id}/`, { method: 'DELETE', headers });
       console.log('Course delete response:', resp.status, resp.ok);
       if(resp.ok){
         setList(l => l.filter(c => c.id !== id));
