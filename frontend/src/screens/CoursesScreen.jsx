@@ -137,7 +137,9 @@ const CoursesScreen = () => {
     if(!window.confirm('Delete this course?')) return;
     try {
       setDeleting(id);
+      console.log('Deleting course:', id);
       const resp = await apiFetch(`/api/courses/${id}/`, { method: 'DELETE' });
+      console.log('Course delete response:', resp.status, resp.ok);
       if(resp.ok){
         setList(l => l.filter(c => c.id !== id));
         notify({ text: 'Course deleted successfully', variant: 'success' });
@@ -145,10 +147,12 @@ const CoursesScreen = () => {
         let errorMsg = 'Failed to delete course';
         try {
           const errText = await resp.text();
+          console.log('Error response text:', errText);
           if (errText) {
             try {
               const errJson = JSON.parse(errText);
               if (errJson.detail) errorMsg = errJson.detail;
+              else errorMsg = JSON.stringify(errJson);
             } catch (parseErr) {
               errorMsg = errText.substring(0, 200);
             }
@@ -156,9 +160,11 @@ const CoursesScreen = () => {
         } catch (e) {
           errorMsg = `Error: ${e.message}`;
         }
+        console.log('Final error message:', errorMsg);
         notify({ text: errorMsg, variant: 'danger' });
       }
     } catch (err) {
+      console.error('Delete error:', err);
       notify({ text: `Error: ${err.message}`, variant: 'danger' });
     }
     finally {
