@@ -155,28 +155,4 @@ const ScheduleViewer = ()=>{
   </Container>);
 };
 
-    {showAIMIChat && (
-      <div className="mb-3">
-        <AIMIChat />
-      </div>
-    )}
-
-    {entries.length === 0 && <Alert variant="info">No schedule data available. Generate a schedule in the Admin Dashboard.</Alert>}
-    {entries.length > 0 && !selectedId && <Alert variant="warning">Select a {getLabel(view).toLowerCase()} to view their schedule.</Alert>}
-    {entries.length > 0 && selectedId && filteredEntries.length === 0 && <Alert variant="warning">No schedule entries for this {getLabel(view).toLowerCase()}.</Alert>}
-    
-    <Table striped hover size="sm">
-      <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th></tr></thead>
-      <tbody>{filteredEntries.map(e=>(<tr key={e.id}>
-        <td>{e.time_slot? e.time_slot.day: '-'}</td>
-        <td>{e.time_slot? (e.time_slot.start_time+'-'+e.time_slot.end_time): '-'}</td>
-        <td>{e.course? e.course.code: '-'}</td>
-        <td>{e.room? e.room.name: '-'}</td>
-        <td>{e.professor? e.professor.name: '-'}</td>
-      </tr>))}</tbody>
-    </Table>
-
-    <AIMISuggestionsModal show={showAIMIModal} onHide={() => setShowAIMIModal(false)} onApplySuggestion={handleApplySuggestion} />
-  </Container>);
-};
 export default ScheduleViewer;
