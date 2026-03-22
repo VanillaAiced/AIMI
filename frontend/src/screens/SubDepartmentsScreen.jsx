@@ -226,7 +226,8 @@ const SubDepartmentsScreen = ()=>{
             <Form onSubmit={async (e)=>{
               e.preventDefault();
               if(!managingSub || !blockYear || !blockNumber) return;
-              const generatedCode = `${blockYear}${blockNumber}`;
+              const paddedNumber = String(blockNumber).padStart(2, '0');
+              const generatedCode = `${blockYear}${paddedNumber}`;
               try {
                 const token = localStorage.getItem('accessToken');
                 const headers = { 'Content-Type': 'application/json' };
@@ -288,7 +289,7 @@ const SubDepartmentsScreen = ()=>{
                 <Form.Label>Generated Block Code</Form.Label>
                 <Form.Control
                   type="text"
-                  value={`${blockYear}${blockNumber}`}
+                  value={`${blockYear}${String(blockNumber).padStart(2, '0')}`}
                   disabled
                   className="bg-light"
                 />
