@@ -137,9 +137,52 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def generate(self, request):
         """Trigger schedule generation. Returns summary of created entries."""
-        # Only admins should be able to trigger generation
-        # scheduler.generate_schedule may be expensive and will create ScheduleEntry rows
+        # Check prerequisites
+        timeslot_count = models.TimeSlot.objects.count()
+        room_count = models.Room.objects.count()
+        curriculum_count = models.Curriculum.objects.count()
+        course_count = models.Course.objects.count()
+        professor_count = models.Professor.objects.count()
+        
+        # Count curricula with courses and blocks linked
+        curricula_with_data = 0
+        for curr in models.Curriculum.objects.all():
+            if curr.courses.exists() and curr.blocks.exists():
+                curricula_with_data += 1
+        
+        # Build error message if prerequisites missing
+        missing = []
+        if timeslot_count == 0:
+            missing.append('Time Slots (create at least one time slot)')
+        if room_count == 0:
+            missing.append('Rooms (create at least one room)')
+        if professor_count == 0:
+            missing.append('Professors (add at least one professor)')
+        if curricula_with_data == 0:
+            missing.append('Curricula with courses & blocks linked (attach courses and blocks to curricula)')
+        
+        if missing:
+            return Response({
+                'created': 0,
+                'details': [],
+                'error': 'Cannot generate schedule. Missing prerequisites: ' + ', '.join(missing),
+                'status': {
+                    'time_slots': timeslot_count,
+                    'rooms': room_count,
+                    'professors': professor_count,
+                    'curricula_with_data': curricula_with_data
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         summary = scheduler.generate_schedule()
+        
+        # If no schedule was created, provide helpful feedback
+        if summary.get('created', 0) == 0:
+            return Response({
+                **summary,
+                'warning': 'No schedule entries were created. This might mean no valid combinations of courses, blocks, rooms, and time slots could be scheduled. Check room type requirements and professor availability.'
+            }, status=status.HTTP_200_OK)
+        
         return Response(summary, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdminOrReadOnly])

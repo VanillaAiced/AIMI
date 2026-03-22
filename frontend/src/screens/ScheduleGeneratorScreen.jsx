@@ -24,8 +24,14 @@ const ScheduleGeneratorScreen = ()=>{
       const token = localStorage.getItem('accessToken');
       const headers = {'Content-Type':'application/json'}; if (token) headers['Authorization']=`Bearer ${token}`;
       const resp = await apiFetch('/api/schedule-entries/generate/', { method:'POST', headers });
+      
       if (resp.ok) {
-        notify({ text: 'Schedule generated successfully! Redirecting...', variant: 'success' });
+        const data = await resp.json();
+        if (data.warning) {
+          notify({ text: data.warning, variant: 'warning' });
+        } else {
+          notify({ text: `Schedule generated successfully! Created ${data.created} entries. Redirecting...`, variant: 'success' });
+        }
         setTimeout(() => { navigate('/admin/schedule'); }, 1500);
       } else {
         let errorMsg = 'Failed to generate schedule';
@@ -33,7 +39,8 @@ const ScheduleGeneratorScreen = ()=>{
         try {
           errText = await resp.text();
           const errJson = JSON.parse(errText);
-          if (errJson.detail) errorMsg = errJson.detail;
+          if (errJson.error) errorMsg = errJson.error;
+          else if (errJson.detail) errorMsg = errJson.detail;
           else if (typeof errJson === 'string') errorMsg = errJson;
         } catch (e) {
           if (errText) errorMsg = errText.substring(0, 150);

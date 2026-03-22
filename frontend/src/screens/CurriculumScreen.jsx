@@ -93,7 +93,7 @@ const CurriculumScreen = () => {
       const blocksToLink = blocks.filter(b => (b.sub_department === Number(subdeptId) || (b.sub_department && (b.sub_department.id || b.sub_department) === Number(subdeptId))) && Number(b.year) === yearNum).map(b => (typeof b.id === 'number' ? b.id : Number(b.id)));
       if (blocksToLink.length > 0) {
         // update curriculum.blocks via PATCH
-        const patch = await fetch(`/api/curricula/${curriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ blocks: blocksToLink }) });
+        const patch = await apiFetch(`/api/curricula/${curriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify({ blocks: blocksToLink }) });
         if (!patch.ok) { 
           const errMsg = await patch.text();
           notify({ text: `Failed to attach blocks to curriculum: ${errMsg}`, variant: 'danger' });
@@ -174,7 +174,7 @@ const CurriculumScreen = () => {
       const newName = sub ? `${sub.name} ${ordinal(yearNum)} Year` : (editingCurriculum.name || 'Curriculum');
 
       const body = { name: newName, sub_department: Number(editingSubdeptId), blocks: blocksToLink };
-      const r = await fetch(`/api/curricula/${editingCurriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+      const r = await apiFetch(`/api/curricula/${editingCurriculum.id}/`, { method: 'PATCH', headers, body: JSON.stringify(body) });
       if (r.ok) {
         const updated = await r.json();
         setCurricula(list => list.map(x => x.id === updated.id ? updated : x));

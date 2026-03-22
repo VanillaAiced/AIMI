@@ -27,6 +27,51 @@ if created:
 else:
     print("✓ School already exists")
 
+# Create essential default data (required for schedule generation)
+print("\nCreating essential resources...")
+
+# Create default RoomType if needed
+room_type, _ = RoomType.objects.get_or_create(
+    name='Lecture Hall',
+    defaults={'description': 'Standard classroom'}
+)
+
+# Create default Building if needed
+building, _ = Building.objects.get_or_create(
+    name='Main Building',
+    defaults={'school': school}
+)
+
+# Create a sample Room for testing (users should add their own)
+room, created = Room.objects.get_or_create(
+    name='101',
+    defaults={
+        'building': building,
+        'capacity': 50,
+        'room_type': room_type
+    }
+)
+if created:
+    print("✓ Sample Room (Main Building - 101) created")
+
+# Create standard TimeSlots (Monday-Friday, standard academic hours)
+days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']
+time_slots_created = 0
+
+for day in days:
+    for hour in [8, 9, 10, 11, 13, 14, 15, 16]:  # 8am-5pm with lunch break
+        start_time = time(hour, 0)
+        end_time = time(hour + 1, 0)
+        ts, created = TimeSlot.objects.get_or_create(
+            day=day,
+            start_time=start_time,
+            end_time=end_time
+        )
+        if created:
+            time_slots_created += 1
+
+print(f"✓ TimeSlots: {time_slots_created} created (Mon-Fri, 8am-6pm)")
+
 # All dummy data has been removed. Add your real data below:
 # 
 # Example: Create a Department
