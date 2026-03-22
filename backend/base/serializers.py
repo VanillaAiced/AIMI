@@ -24,7 +24,7 @@ class SubDepartmentSerializer(serializers.ModelSerializer):
 
 
 class BlockSerializer(serializers.ModelSerializer):
-    sub_department = SubDepartmentSerializer(read_only=True)
+    sub_department_display = SubDepartmentSerializer(source='sub_department', read_only=True)
     class Meta:
         model = models.Block
         fields = '__all__'

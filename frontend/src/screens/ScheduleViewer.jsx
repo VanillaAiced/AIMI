@@ -102,8 +102,10 @@ const ScheduleViewer = ()=>{
   // Calculate filtered blocks based on selections
   const filteredBlocks = selectedSubDept
     ? allBlocks.filter(block => {
-        const blockSubDeptId = block.sub_department?.id || block.sub_department_id;
-        if (String(blockSubDeptId) !== String(selectedSubDept)) return false;
+        const blockSubDeptId = block.sub_department?.id || block.sub_department_id || block.sub_department;
+        const blockSubDeptDisplay = block.sub_department_display?.id || block.sub_department_display;
+        const effectiveSubDeptId = blockSubDeptId || blockSubDeptDisplay;
+        if (String(effectiveSubDeptId) !== String(selectedSubDept)) return false;
         if (selectedYear) {
           if (parseInt(block.year) !== parseInt(selectedYear)) return false;
         }
@@ -116,8 +118,10 @@ const ScheduleViewer = ()=>{
     ? Array.from(new Set(
         allBlocks
           .filter(b => {
-            const bSubDeptId = b.sub_department?.id || b.sub_department_id;
-            return String(bSubDeptId) === String(selectedSubDept) && b.year;
+            const bSubDeptId = b.sub_department?.id || b.sub_department_id || b.sub_department;
+            const bSubDeptDisplay = b.sub_department_display?.id || b.sub_department_display;
+            const effectiveSubDeptId = bSubDeptId || bSubDeptDisplay;
+            return String(effectiveSubDeptId) === String(selectedSubDept) && b.year;
           })
           .map(b => String(b.year))
       )).sort((a, b) => parseInt(a) - parseInt(b))
@@ -191,7 +195,10 @@ const ScheduleViewer = ()=>{
                   disabled={!selectedYear}
                 >
                   <option value="">All Blocks</option>
-                  {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code} {b.sub_department ? `- ${b.sub_department.name}` : ''}</option>)}
+                  {filteredBlocks.map(b=>{
+                    const subDeptName = b.sub_department_display?.name || (typeof b.sub_department === 'object' ? b.sub_department.name : '');
+                    return <option key={b.id} value={b.id}>{b.code} {subDeptName ? `- ${subDeptName}` : ''}</option>;
+                  })}
                 </Form.Select>
               </Form.Group>
             </Col>
