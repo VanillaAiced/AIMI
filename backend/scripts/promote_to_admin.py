@@ -12,8 +12,8 @@ email = 'admin@gmail.com'
 try:
     user = User.objects.filter(email__iexact=email).first()
     if not user:
-        print(f'No user found with email: {email}')
-        sys.exit(2)
+        print(f'No user found with email: {email} - skipping promotion')
+        sys.exit(0)
     user.is_superuser = True
     user.is_staff = True
     user.save()
@@ -28,4 +28,4 @@ try:
         print(f'Promoted {user.username} to admin')
 except Exception as e:
     print('Error promoting user:', e)
-    sys.exit(1)
+    sys.exit(0)
