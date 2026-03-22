@@ -267,11 +267,9 @@ const CurriculumScreen = () => {
       dept = departments.find(d => d.id === depId) || null;
     }
 
-    // derive years from blocks that belong to this curriculum's sub-department
-    const linkedBlocks = blocks.filter(b => {
-      const bSub = (b.sub_department && typeof b.sub_department === 'object') ? b.sub_department.id : b.sub_department;
-      return bSub && subId && Number(bSub) === Number(subId);
-    });
+    // derive years from blocks that are LINKED to this specific curriculum
+    const curriculumBlockIds = Array.isArray(c.blocks) ? c.blocks.map(b => (typeof b === 'number' ? b : (b && b.id ? b.id : null))).filter(Boolean) : [];
+    const linkedBlocks = blocks.filter(b => curriculumBlockIds.includes(typeof b.id === 'number' ? b.id : Number(b.id)));
     if (linkedBlocks.length === 0) {
       rows.push({ curriculum: c, years: [], department: dept, subdepartment: sub });
     } else {
