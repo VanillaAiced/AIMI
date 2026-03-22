@@ -18,17 +18,11 @@ const SetupProgress = ({ onStatus }) => {
           apiFetch('/api/buildings/', { headers }), 
           apiFetch('/api/courses/', { headers }), 
           apiFetch('/api/curricula/', { headers }), 
-          apiFetch('/api/professors/', { headers })
+          apiFetch('/api/professors/', { headers }),
+          apiFetch('/api/students/', { headers })
         ];
         
-        // Only fetch admin users if authenticated
-        if (token) {
-          promises.push(apiFetch('/api/admin/users/', { headers }));
-        } else {
-          promises.push(Promise.resolve({ ok: false })); // placeholder for admin users
-        }
-        
-        const [deps, bds, cs, curricula, profs, users] = await Promise.all(promises);
+        const [deps, bds, cs, curricula, profs, students] = await Promise.all(promises);
         const res = {};
         if (deps.ok) {
           const depsJson = await deps.json();
@@ -55,10 +49,9 @@ const SetupProgress = ({ onStatus }) => {
           res.professors = Array.isArray(p) ? p.length : 0;
           setPeople(prev => ({ ...prev, professors: Array.isArray(p) ? p : [] }));
         }
-        if (users && users.ok) {
-          const ujson = await users.json();
-          const all = ujson.users || [];
-          const studs = all.filter(x => x.role === 'student' || (!x.role && !x.is_staff && !x.is_superuser));
+        if (students.ok) {
+          const sjson = await students.json();
+          const studs = Array.isArray(sjson) ? sjson : (sjson.results || []);
           res.students = studs.length;
           setPeople(prev => ({ ...prev, students: studs }));
         }
