@@ -27,19 +27,48 @@ const ScheduleViewer = ()=>{
   // Initial Data Fetch
   useEffect(()=>{ 
     setLoading(true);
+    console.log('Fetching schedule entries...');
     Promise.all([
-      apiFetch('/api/schedule-entries/').then(r=>r.ok? r.json():[]).then(j=>{
+      apiFetch('/api/schedule-entries/').then(r=>{
+        console.log('Schedule entries response:', r.status, r.ok);
+        return r.ok? r.json():[]; 
+      }).then(j=>{
+        console.log('Schedule entries data:', j);
         const data = Array.isArray(j) ? j : (j.results || []);
         setEntries(data);
-      }).catch(()=>setEntries([])),
-      apiFetch('/api/departments/').then(r=>r.ok? r.json():[]).then(j=>{
-        setDepartments(Array.isArray(j) ? j : (j.results || []));
+      }).catch(e=>{
+        console.error('Error fetching schedule entries:', e);
+        setEntries([]);
       }),
-      apiFetch('/api/subdepartments/').then(r=>r.ok? r.json():[]).then(j=>{
-        setSubDepartments(Array.isArray(j) ? j : (j.results || []));
+      apiFetch('/api/departments/').then(r=>{
+        console.log('Departments response:', r.status, r.ok);
+        return r.ok? r.json():[]; 
+      }).then(j=>{
+        const data = Array.isArray(j) ? j : (j.results || []);
+        setDepartments(data);
+      }).catch(e=>{
+        console.error('Error fetching departments:', e);
+        setDepartments([]);
       }),
-      apiFetch('/api/blocks/').then(r=>r.ok? r.json():[]).then(j=>{
-        setAllBlocks(Array.isArray(j) ? j : (j.results || []));
+      apiFetch('/api/subdepartments/').then(r=>{
+        console.log('SubDepartments response:', r.status, r.ok);
+        return r.ok? r.json():[]; 
+      }).then(j=>{
+        const data = Array.isArray(j) ? j : (j.results || []);
+        setSubDepartments(data);
+      }).catch(e=>{
+        console.error('Error fetching subdepartments:', e);
+        setSubDepartments([]);
+      }),
+      apiFetch('/api/blocks/').then(r=>{
+        console.log('Blocks response:', r.status, r.ok);
+        return r.ok? r.json():[]; 
+      }).then(j=>{
+        const data = Array.isArray(j) ? j : (j.results || []);
+        setAllBlocks(data);
+      }).catch(e=>{
+        console.error('Error fetching blocks:', e);
+        setAllBlocks([]);
       })
     ]).finally(() => setLoading(false));
   },[]);
