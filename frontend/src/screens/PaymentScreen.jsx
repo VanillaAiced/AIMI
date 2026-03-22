@@ -72,7 +72,7 @@ const PaymentScreen = () => {
                 </Alert>
               )}
 
-              <div className="mb-3">
+              <div className="mb-3 text-center">
                 <PayPal
                   amount="5.99"
                   onSuccess={handlePaymentSuccess}
@@ -81,7 +81,7 @@ const PaymentScreen = () => {
                 />
               </div>
 
-              <div className="mt-3">
+              <div className="mt-3 text-center">
                 <small className="text-muted">
                   <i className="fas fa-lock"></i> Secure payment powered by PayPal
                 </small>
