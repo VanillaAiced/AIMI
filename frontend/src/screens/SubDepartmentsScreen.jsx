@@ -216,7 +216,7 @@ const SubDepartmentsScreen = ()=>{
       </Table>
 
       {/* Blocks Manager Modal */}
-      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); setBlockCode(''); setBlockYear(1); setBlockNumber('01'); }} fullscreen>
+      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); setBlockYear(1); setBlockNumber('01'); }} fullscreen>
         <Modal.Header closeButton>
           <Modal.Title>Blocks for {managingSub?.name}</Modal.Title>
         </Modal.Header>
