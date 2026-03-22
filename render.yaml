@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt && python backend/manage.py migrate --no-input && python backend/manage.py collectstatic --no-input
-    startCommand: gunicorn --chdir backend backend.wsgi:application
+    startCommand: sh -c 'cd backend && exec gunicorn backend.wsgi:application'
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
