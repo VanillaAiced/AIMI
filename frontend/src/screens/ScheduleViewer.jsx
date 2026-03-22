@@ -21,7 +21,20 @@ const ScheduleViewer = ()=>{
   },[]);
 
   // Get unique blocks, professors, rooms from entries
-  const blocks = [...new Set(entries.filter(e=>e.block).map(e=>e.block))].map(id=>({id, name: `Block ${id}`})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const getUniqueBlocks = () => {
+    const seen = new Map();
+    entries.forEach(e => {
+      if(e.block) {
+        const block = typeof e.block === 'object' ? e.block : {id: e.block};
+        const key = block.id || e.block;
+        if(!seen.has(key)) {
+          seen.set(key, {id: key, name: block.code || `Block ${key}`});
+        }
+      }
+    });
+    return Array.from(seen.values()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  };
+  const blocks = getUniqueBlocks();
   const profs = [...new Set(entries.filter(e=>e.professor).map(e=>JSON.stringify({id: e.professor.id, name: e.professor.name})))].map(JSON.parse).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
   const rooms = [...new Set(entries.filter(e=>e.room).map(e=>JSON.stringify({id: e.room.id, name: e.room.name})))].map(JSON.parse).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
 
@@ -40,7 +53,10 @@ const ScheduleViewer = ()=>{
   };
 
   const filteredEntries = selectedId ? entries.filter(e => {
-    if(view === 'block') return e.block == selectedId;
+    if(view === 'block') {
+      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
+      return blockId == selectedId;
+    }
     if(view === 'prof') return e.professor && e.professor.id == selectedId;
     if(view === 'room') return e.room && e.room.id == selectedId;
     return false;
