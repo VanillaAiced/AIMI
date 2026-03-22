@@ -319,6 +319,7 @@ class ScheduleEntrySerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
     room = serializers.SerializerMethodField()
     professor = serializers.SerializerMethodField()
+    block = serializers.SerializerMethodField()
 
     class Meta:
         model = models.ScheduleEntry
@@ -358,5 +359,14 @@ class ScheduleEntrySerializer(serializers.ModelSerializer):
                 'id': obj.professor.id,
                 'name': obj.professor.name,
                 'email': obj.professor.email
+            }
+        return None
+
+    def get_block(self, obj):
+        if obj.block:
+            return {
+                'id': obj.block.id,
+                'code': obj.block.code,
+                'name': obj.block.name
             }
         return None

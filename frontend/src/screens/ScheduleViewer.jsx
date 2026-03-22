@@ -193,7 +193,7 @@ const ScheduleViewer = ()=>{
               <td>{e.course? e.course.code: '-'}</td>
               <td>{e.room? e.room.name: '-'}</td>
               <td>{e.professor? e.professor.name: '-'}</td>
-              <td>{typeof e.block === 'object' ? (e.block.code || e.block.name) : `Block ${e.block}`}</td>
+              <td>{typeof e.block === 'object' ? (e.block.code || e.block.name || '-') : '-'}</td>
             </tr>))}</tbody>
           </Table>
         )}
