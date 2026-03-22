@@ -36,7 +36,7 @@ const SubDepartmentsScreen = ()=>{
         setList(filtered);
         // prefetch block counts for visible sub-departments
         if(filtered.length){
-          const promises = filtered.map(s => fetch(`/api/blocks/?sub_department=${s.id}`, { headers }).then(r=>r.ok? r.json(): []).catch(()=>[]));
+          const promises = filtered.map(s => apiFetch(`/api/blocks/?sub_department=${s.id}`, { headers }).then(r=>r.ok? r.json(): []).catch(()=>[]));
           const results = await Promise.all(promises);
           const counts = {};
           for(let i=0;i<filtered.length;i++) counts[filtered[i].id] = Array.isArray(results[i]) ? results[i].length : (results[i].results?results[i].results.length:0);
@@ -51,7 +51,7 @@ const SubDepartmentsScreen = ()=>{
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if(token) headers['Authorization'] = `Bearer ${token}`;
-        const r = await fetch('/api/departments/', { headers });
+        const r = await apiFetch('/api/departments/', { headers });
         if(!r.ok) return;
         const j = await r.json();
         const d = Array.isArray(j)?j:(j.results||j);
@@ -69,7 +69,7 @@ const SubDepartmentsScreen = ()=>{
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if(token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch('/api/subdepartments/', { method: 'POST', headers, body: JSON.stringify({name, department: dept})});
+      const resp = await apiFetch('/api/subdepartments/', { method: 'POST', headers, body: JSON.stringify({name, department: dept})});
       if(resp.ok){
         const j = await resp.json();
         setList(s => [...s, j]);
@@ -108,7 +108,7 @@ const SubDepartmentsScreen = ()=>{
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if(token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch(`/api/subdepartments/${id}/`, {method: 'DELETE', headers});
+      const resp = await apiFetch(`/api/subdepartments/${id}/`, {method: 'DELETE', headers});
       if(resp.ok){
         setList(s => s.filter(x => x.id !== id));
         setBlockCounts(prev => { const copy = {...prev}; delete copy[id]; return copy; });
@@ -189,7 +189,7 @@ const SubDepartmentsScreen = ()=>{
                       const token = localStorage.getItem('accessToken');
                       const headers = { 'Content-Type': 'application/json' };
                       if(token) headers['Authorization'] = `Bearer ${token}`;
-                      const r = await fetch(`/api/blocks/?sub_department=${s.id}`, { headers });
+                      const r = await apiFetch(`/api/blocks/?sub_department=${s.id}`, { headers });
                       if(!r.ok) return setBlocks([]);
                       const j = await r.json();
                       const data = Array.isArray(j)?j:(j.results||j);
@@ -322,7 +322,7 @@ const SubDepartmentsScreen = ()=>{
                           const token = localStorage.getItem('accessToken');
                           const headers = { 'Content-Type': 'application/json' };
                           if(token) headers['Authorization'] = `Bearer ${token}`;
-                          const r = await fetch(`/api/blocks/${b.id}/`, { method: 'DELETE', headers });
+                          const r = await apiFetch(`/api/blocks/${b.id}/`, { method: 'DELETE', headers });
                           if(r.ok){
                             setBlocks(bs => bs.filter(x => x.id !== b.id));
                             setBlockCounts(prev => ({...prev, [managingSub.id]: Math.max(0, (prev[managingSub.id] || 0) - 1)}));
