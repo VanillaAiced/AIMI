@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Alert, Form, Row, Col } from 'react-bootstrap';
+import { Table, Button, Alert, Form, Row, Col, Container } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import AIMISuggestionsModal from '../components/AIMISuggestionsModal';
 import AIMIChat from '../components/AIMIChat';
 import { apiFetch } from '../apiClient';
 
 const ScheduleViewer = ()=>{
+  const navigate = useNavigate();
   const [view, setView] = useState('block');
   const [entries, setEntries] = useState([]);
   const [selectedId, setSelectedId] = useState('');
@@ -47,7 +49,8 @@ const ScheduleViewer = ()=>{
     alert(`Proposal: ${proposal.title}\n\nChanges:\n${proposal.changes?.map(c => `${c.from} → ${c.to}`).join('\n')}`);
   };
 
-  return (<div>
+  return (<Container className="mt-4">
+    <div className="mb-3"><Button size="sm" variant="secondary" onClick={()=>navigate('/admin')}>Back to Admin</Button></div>
     <h3>Schedule Viewer</h3>
     
     <div className="mb-3">
@@ -98,6 +101,6 @@ const ScheduleViewer = ()=>{
     </Table>
 
     <AIMISuggestionsModal show={showAIMIModal} onHide={() => setShowAIMIModal(false)} onApplySuggestion={handleApplySuggestion} />
-  </div>);
+  </Container>);
 };
 export default ScheduleViewer;
