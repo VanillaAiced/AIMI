@@ -137,6 +137,61 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def generate(self, request):
         """Trigger schedule generation. Returns summary of created entries."""
+        from datetime import time
+        
+        # Auto-create TimeSlots if none exist
+        timeslot_count = models.TimeSlot.objects.count()
+        if timeslot_count == 0:
+            # Create default TimeSlots
+            time_slots = [
+                # LECTURES (1h 30m) - Monday to Friday
+                ('MONDAY', '08:00', '09:30', 'LECTURE'),
+                ('MONDAY', '09:35', '11:05', 'LECTURE'),
+                ('MONDAY', '11:10', '12:40', 'LECTURE'),
+                ('MONDAY', '12:45', '14:15', 'LECTURE'),
+                ('MONDAY', '14:20', '15:50', 'LECTURE'),
+                ('TUESDAY', '08:00', '09:30', 'LECTURE'),
+                ('TUESDAY', '09:35', '11:05', 'LECTURE'),
+                ('TUESDAY', '11:10', '12:40', 'LECTURE'),
+                ('TUESDAY', '12:45', '14:15', 'LECTURE'),
+                ('TUESDAY', '14:20', '15:50', 'LECTURE'),
+                ('WEDNESDAY', '08:00', '09:30', 'LECTURE'),
+                ('WEDNESDAY', '09:35', '11:05', 'LECTURE'),
+                ('WEDNESDAY', '11:10', '12:40', 'LECTURE'),
+                ('WEDNESDAY', '12:45', '14:15', 'LECTURE'),
+                ('WEDNESDAY', '14:20', '15:50', 'LECTURE'),
+                ('THURSDAY', '08:00', '09:30', 'LECTURE'),
+                ('THURSDAY', '09:35', '11:05', 'LECTURE'),
+                ('THURSDAY', '11:10', '12:40', 'LECTURE'),
+                ('THURSDAY', '12:45', '14:15', 'LECTURE'),
+                ('THURSDAY', '14:20', '15:50', 'LECTURE'),
+                ('FRIDAY', '08:00', '09:30', 'LECTURE'),
+                ('FRIDAY', '09:35', '11:05', 'LECTURE'),
+                ('FRIDAY', '11:10', '12:40', 'LECTURE'),
+                ('FRIDAY', '12:45', '14:15', 'LECTURE'),
+                ('FRIDAY', '14:20', '15:50', 'LECTURE'),
+                # LABS (3 hours) - Monday to Friday
+                ('MONDAY', '08:00', '11:00', 'LAB'),
+                ('MONDAY', '11:05', '14:05', 'LAB'),
+                ('TUESDAY', '08:00', '11:00', 'LAB'),
+                ('TUESDAY', '11:05', '14:05', 'LAB'),
+                ('WEDNESDAY', '08:00', '11:00', 'LAB'),
+                ('WEDNESDAY', '11:05', '14:05', 'LAB'),
+                ('THURSDAY', '08:00', '11:00', 'LAB'),
+                ('THURSDAY', '11:05', '14:05', 'LAB'),
+                ('FRIDAY', '08:00', '11:00', 'LAB'),
+                ('FRIDAY', '11:05', '14:05', 'LAB'),
+            ]
+            for day, start_str, end_str, slot_type in time_slots:
+                start_time = time.fromisoformat(start_str)
+                end_time = time.fromisoformat(end_str)
+                models.TimeSlot.objects.get_or_create(
+                    day=day,
+                    start_time=start_time,
+                    end_time=end_time,
+                    type=slot_type
+                )
+        
         # Check prerequisites
         timeslot_count = models.TimeSlot.objects.count()
         room_count = models.Room.objects.count()
@@ -152,8 +207,6 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
         
         # Build error message if prerequisites missing
         missing = []
-        if timeslot_count == 0:
-            missing.append('Time Slots (create at least one time slot)')
         if room_count == 0:
             missing.append('Rooms (create at least one room)')
         if professor_count == 0:
