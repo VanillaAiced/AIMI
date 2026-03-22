@@ -3,6 +3,8 @@ import { Navbar, Container, Nav } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from './NotificationProvider';
+import { apiFetch } from '../apiClient';
+import { apiFetch } from '../apiClient';
 
 const Header = ({ user, setUser }) => {
   const navigate = useNavigate();
@@ -13,7 +15,7 @@ const Header = ({ user, setUser }) => {
       const token = localStorage.getItem('accessToken');
       const headers = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      await fetch('/api/auth/logout/', { method: 'POST', headers });
+      await apiFetch('/api/auth/logout/', { method: 'POST', headers });
     } catch (e) {
       // ignore
     }

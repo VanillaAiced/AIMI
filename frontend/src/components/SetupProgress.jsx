@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ProgressBar, ListGroup, Tabs, Tab, Table } from 'react-bootstrap';
+import { apiFetch } from '../apiClient';
 
 const SetupProgress = ({ onStatus }) => {
   const [counts, setCounts] = useState({ departments:0, buildings:0, courses:0, professors:0, students:0 });
@@ -13,7 +14,7 @@ const SetupProgress = ({ onStatus }) => {
         if (token) headers['Authorization'] = `Bearer ${token}`;
         // fetch curricula (replaces former course-offerings), plus core models
         const [deps, bds, cs, curricula, profs, users] = await Promise.all([
-          fetch('/api/departments/'), fetch('/api/buildings/'), fetch('/api/courses/'), fetch('/api/curricula/'), fetch('/api/professors/'), fetch('/api/admin/users/', { headers })
+          apiFetch('/api/departments/'), apiFetch('/api/buildings/'), apiFetch('/api/courses/'), apiFetch('/api/curricula/'), apiFetch('/api/professors/'), apiFetch('/api/admin/users/', { headers })
         ]);
         const res = {};
         if (deps.ok) res.departments = (await deps.json()).length;

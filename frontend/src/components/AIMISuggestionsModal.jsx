@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Modal, Alert, Spinner, Card, ListGroup } from 'react-bootstrap';
+import { apiFetch } from '../apiClient';
 
 const AIMISuggestionsModal = ({ show, onHide, onApplySuggestion }) => {
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ const AIMISuggestionsModal = ({ show, onHide, onApplySuggestion }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      const response = await fetch('/api/aimi/optimize-schedule/', { 
+      const response = await apiFetch('/api/aimi/optimize-schedule/', { 
         headers,
         signal: controller.signal 
       });

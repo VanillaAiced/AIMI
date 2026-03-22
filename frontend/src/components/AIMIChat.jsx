@@ -39,7 +39,7 @@ const AIMIChat = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch('/api/aimi/chat/', {
+      const response = await apiFetch('/api/aimi/chat/', {
         method: 'POST',
         headers,
         body: JSON.stringify({
