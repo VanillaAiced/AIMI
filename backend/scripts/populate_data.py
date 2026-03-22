@@ -50,13 +50,20 @@ for bldg_name in building_names:
     buildings.append(bldg)
     print(f"✓ Building: {bldg_name}")
 
-# Create Blocks
-block_names = ['Block 1', 'Block 2', 'Block 3']
+# Create Blocks (requires sub_department and year)
 blocks = []
-for blk_name in block_names:
-    blk, _ = Block.objects.get_or_create(name=blk_name)
-    blocks.append(blk)
-    print(f"✓ Block: {blk_name}")
+for subdept in SubDepartment.objects.all()[:3]:  # Create blocks for first 3 subdepts
+    for year in range(1, 4):  # Years 1, 2, 3
+        code = f"{subdept.code if hasattr(subdept, 'code') else subdept.id}-Y{year}"
+        try:
+            blk, _ = Block.objects.get_or_create(
+                code=code,
+                defaults={'sub_department': subdept, 'year': year}
+            )
+            blocks.append(blk)
+            print(f"✓ Block: {blk.code} (Year {year})")
+        except Exception as e:
+            print(f"  ✗ Block creation failed: {e}")
 
 # Create Room Types
 room_types_data = ['Lecture Hall', 'Lab', 'Classroom', 'Conference Room']
