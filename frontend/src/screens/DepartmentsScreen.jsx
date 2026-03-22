@@ -112,7 +112,7 @@ const DepartmentsScreen = () => {
       const token = localStorage.getItem('accessToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch(`/api/departments/${id}/`, { method: 'DELETE', headers });
+      const resp = await apiFetch(`/api/departments/${id}/`, { method: 'DELETE', headers });
       if (resp.ok) {
         setList((s)=>s.filter(d=>d.id!==id));
         notify({ text: 'Department deleted successfully', variant: 'success' });
