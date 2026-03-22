@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationProvider';
+import { apiFetch } from '../apiClient';
 
 const LoginScreen = ({ setUser }) => {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ const LoginScreen = ({ setUser }) => {
     e.preventDefault();
     try {
       console.log('[LoginScreen] Submitting login for:', email);
-      const resp = await fetch('/api/auth/login/', {
+      const resp = await apiFetch('/api/auth/login/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email, password }),
