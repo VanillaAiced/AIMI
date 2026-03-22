@@ -188,10 +188,10 @@ const ScheduleViewer = ()=>{
                   size="sm" 
                   value={selectedId} 
                   onChange={e=>setSelectedId(e.target.value)}
-                  disabled={!selectedSubDept}
+                  disabled={!selectedYear}
                 >
                   <option value="">All Blocks</option>
-                  {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code || b.name}</option>)}
+                  {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code} {b.sub_department ? `- ${b.sub_department.name}` : ''}</option>)}
                 </Form.Select>
               </Form.Group>
             </Col>
