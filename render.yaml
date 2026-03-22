@@ -4,7 +4,7 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt && python backend/manage.py migrate --no-input && python backend/manage.py collectstatic --no-input && python backend/scripts/populate_data.py
+    buildCommand: pip install -r requirements.txt && python backend/manage.py migrate --no-input && python backend/manage.py collectstatic --no-input && python backend/scripts/populate_data.py && python backend/scripts/promote_to_admin.py
     startCommand: sh -c 'cd backend && exec gunicorn backend.wsgi:application'
     envVars:
       - key: PYTHON_VERSION
