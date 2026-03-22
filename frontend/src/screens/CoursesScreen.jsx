@@ -137,10 +137,7 @@ const CoursesScreen = () => {
     if(!window.confirm('Delete this course?')) return;
     try {
       setDeleting(id);
-      const token = localStorage.getItem('accessToken');
-      const headers = { 'Content-Type': 'application/json' };
-      if(token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch(`/api/courses/${id}/`, { method: 'DELETE', headers });
+      const resp = await apiFetch(`/api/courses/${id}/`, { method: 'DELETE' });
       if(resp.ok){
         setList(l => l.filter(c => c.id !== id));
         notify({ text: 'Course deleted successfully', variant: 'success' });
