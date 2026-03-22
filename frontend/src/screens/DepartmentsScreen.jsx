@@ -18,20 +18,30 @@ const DepartmentsScreen = () => {
     (async ()=>{
       try{
         setLoading(true);
+        console.log('Fetching departments...');
         const token = localStorage.getItem('accessToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
         const resp = await apiFetch('/api/departments/', { headers });
-        if(!resp.ok) return;
+        console.log('Departments response:', resp.status, resp.ok);
+        if(!resp.ok) {
+          console.error('Failed to fetch departments:', resp.status);
+          notify({ text: `Failed to load departments: ${resp.status}`, variant: 'danger' });
+          return;
+        }
         const json = await resp.json();
+        console.log('Departments data:', json);
         const data = Array.isArray(json) ? json : (json.results || json);
         setList(data);
-      }catch(e){}
+      }catch(e){
+        console.error('Error fetching departments:', e);
+        notify({ text: `Error loading departments: ${e.message}`, variant: 'danger' });
+      }
       finally {
         setLoading(false);
       }
     })();
-  },[]);
+  },[notify]);
 
   // when departments load, prefetch counts of sub-departments per department
   useEffect(()=>{
