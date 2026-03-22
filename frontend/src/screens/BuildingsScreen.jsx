@@ -15,8 +15,7 @@ const BuildingsScreen = () => {
   const [roomFloor, setRoomFloor] = useState('');
   const [roomCapacity, setRoomCapacity] = useState('');
   const [roomType, setRoomType] = useState('LECTURE');
-  const [editingRoom, setEditingRoom] = useState(null);
-  const navigate = useNavigate();
+  const [deletingRoomId, setDeletingRoomId] = useState(null);
   const { notify } = useNotification();
 
   useEffect(()=>{
@@ -303,10 +302,14 @@ const BuildingsScreen = () => {
                     <Button
                       size="sm"
                       variant="danger"
+                      disabled={deletingRoomId === r.id}
                       onClick={async ()=>{
                         if(!window.confirm('Delete room?')) return;
+                        setDeletingRoomId(r.id);
                         try {
+                          console.log('Deleting room:', r.id);
                           const resp = await apiFetch(`/api/rooms/${r.id}/`, { method: 'DELETE' });
+                          console.log('Delete response:', resp.status, resp.ok);
                           if (resp.ok) {
                             setRooms(rs => rs.filter(x => x.id !== r.id));
                             setBuildingCounts(prev => ({...prev, [selectedBuilding.id]: Math.max(0, (prev[selectedBuilding.id] || rooms.length) - 1)}));
@@ -315,10 +318,12 @@ const BuildingsScreen = () => {
                             let errorMsg = 'Failed to delete room';
                             try {
                               const errText = await resp.text();
+                              console.log('Error response text:', errText);
                               if (errText) {
                                 try {
                                   const errJson = JSON.parse(errText);
                                   if (errJson.detail) errorMsg = errJson.detail;
+                                  else errorMsg = JSON.stringify(errJson);
                                 } catch (parseErr) {
                                   errorMsg = errText.substring(0, 200);
                                 }
@@ -326,14 +331,18 @@ const BuildingsScreen = () => {
                             } catch (e) {
                               errorMsg = `Error: ${e.message}`;
                             }
+                            console.log('Final error message:', errorMsg);
                             notify({ text: errorMsg, variant: 'danger' });
                           }
                         } catch (err) {
+                          console.error('Delete error:', err);
                           notify({ text: `Error: ${err.message}`, variant: 'danger' });
+                        } finally {
+                          setDeletingRoomId(null);
                         }
                       }}
                     >
-                      Delete
+                      {deletingRoomId === r.id ? 'Deleting...' : 'Delete'}
                     </Button>
                   </td>
                 </tr>
