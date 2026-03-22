@@ -1,6 +1,8 @@
 Django==6.0.2
 django-cors-headers==4.9.0
 whitenoise==6.4.0
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
 
 # Optional/data-processing
 # Use a currently available ortools release

@@ -25,12 +25,12 @@ load_dotenv(BASE_DIR.parent / '.env')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2!cd^q=e*u2i2&bse#ys9&7$yp(--@(0a)vi%p&a^&of^^z$%$'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-2!cd^q=e*u2i2&bse#ys9&7$yp(--@(0a)vi%p&a^&of^^z$%$')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -99,12 +99,28 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if os.getenv('DATABASE_URL'):
+    # PostgreSQL for production
+    import urllib.parse
+    db_url = urllib.parse.urlparse(os.getenv('DATABASE_URL'))
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_url.path[1:],  # Remove leading slash
+            'USER': db_url.username,
+            'PASSWORD': db_url.password,
+            'HOST': db_url.hostname,
+            'PORT': db_url.port or 5432,
+        }
     }
-}
+else:
+    # SQLite for development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -186,6 +202,13 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
-# Development CORS settings - allow frontend to access API during development
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS settings - configured for both development and production
+if DEBUG:
+    # Allow all origins in development
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    # In production, specify allowed origins
+    allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins]
+
 CORS_ALLOW_CREDENTIALS = True

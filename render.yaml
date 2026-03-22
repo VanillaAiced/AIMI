@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: aimi-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && python backend/manage.py migrate --no-input && python backend/manage.py collectstatic --no-input
+    startCommand: gunicorn backend.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*.render.com,localhost"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://your-vercel-frontend.vercel.app"
+      - fromGroup: postgres
+
+  - type: pserv
+    name: aimi-postgres
+    env: postgresql
+    plan: free
+    ipAllowList: []
+    envVars:
+      - key: POSTGRES_DB
+        value: aimi_db
+      - key: POSTGRES_USER
+        value: aimi_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true

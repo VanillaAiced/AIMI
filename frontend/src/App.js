@@ -26,6 +26,7 @@ import ScheduleViewer from './screens/ScheduleViewer';
 import StudentDashboard from './screens/StudentDashboard';
 import ProfessorDashboard from './screens/ProfessorDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import { apiFetch } from './apiClient';
 // SetupProgress is used inside AdminDashboard; not imported here to avoid unused import
 
 // Module-level guard so the auth bootstrap runs only once across remounts/HMR
@@ -51,7 +52,7 @@ function App() {
 
           const token = localStorage.getItem('accessToken');
           if (!token) return;
-          const resp = await fetch('/api/auth/me/', {
+          const resp = await apiFetch('/api/auth/me/', {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           });
           if (!resp.ok) {
