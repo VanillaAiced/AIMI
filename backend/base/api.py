@@ -134,6 +134,16 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ScheduleEntrySerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    def list(self, request, *args, **kwargs):
+        """Override list to catch and handle serialization errors."""
+        try:
+            return super().list(request, *args, **kwargs)
+        except Exception as e:
+            import traceback
+            print(f"Error listing schedule entries: {e}")
+            traceback.print_exc()
+            return Response({'error': str(e), 'detail': traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def generate(self, request):
         """Trigger schedule generation. Returns summary of created entries."""
