@@ -227,6 +227,9 @@ class ScheduleEntryViewSet(viewsets.ModelViewSet):
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Clear existing schedule entries before generating new ones
+        models.ScheduleEntry.objects.all().delete()
+        
         summary = scheduler.generate_schedule()
         
         # If no schedule was created, provide helpful feedback
