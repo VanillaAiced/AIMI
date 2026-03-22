@@ -95,14 +95,9 @@ const ScheduleViewer = ()=>{
   const filteredSubDepts = selectedDept 
     ? subDepartments.filter(sd => {
         const deptId = sd.department?.id || sd.department;
-        const match = String(deptId) === String(selectedDept);
-        console.log(`SubDept "${sd.name}": deptId=${deptId}, selectedDept=${selectedDept}, match=${match}`);
-        return match;
+        return String(deptId) === String(selectedDept);
       })
     : subDepartments;
-  
-  console.log('All SubDepartments:', subDepartments);
-  console.log('Filtered SubDepts:', filteredSubDepts, 'for selectedDept:', selectedDept);
 
   // Calculate filtered blocks based on selections
   const filteredBlocks = selectedSubDept
@@ -132,35 +127,38 @@ const ScheduleViewer = ()=>{
       )).sort((a, b) => parseInt(a) - parseInt(b))
     : [];
 
-  // Get block IDs from filtered blocks
-  const filteredBlockIds = filteredBlocks.map(b => b.id);
+  // Get block IDs from filtered blocks (if sub-dept selected)
+  // If only dept selected (no sub-dept), get blocks from all sub-depts under that dept
+  let effectiveBlockIds = [];
+  if (selectedSubDept) {
+    effectiveBlockIds = filteredBlocks.map(b => b.id);
+  } else if (selectedDept) {
+    // Department selected but no sub-department - show blocks from all sub-depts under that dept
+    effectiveBlockIds = allBlocks
+      .filter(b => {
+        const bSubDeptId = b.sub_department?.id || b.sub_department_id || b.sub_department;
+        const bSubDeptDisplay = b.sub_department_display?.id || b.sub_department_display;
+        const effectiveSubDeptId = bSubDeptId || bSubDeptDisplay;
+        return filteredSubDepts.some(sd => String(sd.id) === String(effectiveSubDeptId));
+      })
+      .map(b => b.id);
+  }
 
   // Calculate filtered schedule entries based on filtered blocks
   const filteredEntries = entries.filter(e => {
-    // If department selected, ensure only show entries from that department
-    if (selectedDept) {
-      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
-      // Only show if block is in filtered blocks
-      if (!filteredBlockIds.includes(blockId)) return false;
-    }
+    const blockId = typeof e.block === 'object' ? e.block.id : e.block;
     
     if (selectedId) {
-      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
       return String(blockId) === String(selectedId);
     }
     
+    // If department or sub-department selected, apply block filter
+    if (selectedDept || selectedSubDept) {
+      return effectiveBlockIds.includes(blockId);
+    }
+    
     // If no filters selected, show all entries
-    if (!selectedDept && !selectedSubDept && !selectedYear && !selectedId) {
-      return true;
-    }
-    
-    // If sub-department selected, apply block filter
-    if (selectedSubDept) {
-      const blockId = typeof e.block === 'object' ? e.block.id : e.block;
-      return filteredBlockIds.includes(blockId);
-    }
-    
-    return false;
+    return true;
   });
 
   const handleApplySuggestion = (proposal) => {
