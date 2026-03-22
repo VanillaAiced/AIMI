@@ -95,9 +95,14 @@ const ScheduleViewer = ()=>{
   const filteredSubDepts = selectedDept 
     ? subDepartments.filter(sd => {
         const deptId = sd.department?.id || sd.department;
-        return String(deptId) === String(selectedDept);
+        const match = String(deptId) === String(selectedDept);
+        console.log(`SubDept "${sd.name}": deptId=${deptId}, selectedDept=${selectedDept}, match=${match}`);
+        return match;
       })
     : subDepartments;
+  
+  console.log('All SubDepartments:', subDepartments);
+  console.log('Filtered SubDepts:', filteredSubDepts, 'for selectedDept:', selectedDept);
 
   // Calculate filtered blocks based on selections
   const filteredBlocks = selectedSubDept
