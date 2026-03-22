@@ -12,7 +12,7 @@ const ScheduleViewer = ()=>{
   // Hierarchical Filter States
   const [departments, setDepartments] = useState([]);
   const [subDepartments, setSubDepartments] = useState([]);
-  const [blocks, setBlocks] = useState([]);
+  const [allBlocks, setAllBlocks] = useState([]);
   
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedSubDept, setSelectedSubDept] = useState('');
@@ -32,40 +32,43 @@ const ScheduleViewer = ()=>{
     apiFetch('/api/departments/').then(r=>r.ok? r.json():[]).then(j=>{
       setDepartments(Array.isArray(j) ? j : (j.results || []));
     });
+
+    apiFetch('/api/subdepartments/').then(r=>r.ok? r.json():[]).then(j=>{
+      setSubDepartments(Array.isArray(j) ? j : (j.results || []));
+    });
+
+    apiFetch('/api/blocks/').then(r=>r.ok? r.json():[]).then(j=>{
+      setAllBlocks(Array.isArray(j) ? j : (j.results || []));
+    });
   },[]);
 
-  // Fetch Sub-Departments when Dept changes
-  useEffect(() => {
-    if (selectedDept) {
-      apiFetch(`/api/subdepartments/?department=${selectedDept}`).then(r=>r.ok? r.json():[]).then(j=>{
-        setSubDepartments(Array.isArray(j) ? j : (j.results || []));
-      });
-    } else {
-      setSubDepartments([]);
-    }
-    setSelectedSubDept('');
-    setBlocks([]);
-    setSelectedId('');
-  }, [selectedDept]);
+  // Calculate filtered sub-departments based on selected department
+  const filteredSubDepts = selectedDept 
+    ? subDepartments.filter(sd => String(sd.department) === String(selectedDept))
+    : subDepartments;
 
-  // Fetch Blocks when Sub-Dept or Year changes
-  useEffect(() => {
-    if (selectedSubDept) {
-      let url = `/api/blocks/?sub_department=${selectedSubDept}`;
-      if (selectedYear) url += `&year=${selectedYear}`;
-      apiFetch(url).then(r=>r.ok? r.json():[]).then(j=>{
-        setBlocks(Array.isArray(j) ? j : (j.results || []));
-      });
-    } else {
-      setBlocks([]);
+  // Calculate filtered blocks based on selections
+  const filteredBlocks = allBlocks.filter(block => {
+    if (selectedDept && String(block.sub_department_id) !== null) {
+      const blockSubDept = subDepartments.find(sd => sd.id === block.sub_department_id);
+      if (!blockSubDept || String(blockSubDept.department) !== String(selectedDept)) return false;
     }
-    setSelectedId('');
-  }, [selectedSubDept, selectedYear]);
+    if (selectedSubDept && String(block.sub_department_id) !== String(selectedSubDept)) return false;
+    if (selectedYear && parseInt(block.year) !== parseInt(selectedYear)) return false;
+    return true;
+  });
 
-  const filteredEntries = selectedId ? entries.filter(e => {
+  // Get block IDs from filtered blocks
+  const filteredBlockIds = filteredBlocks.map(b => b.id);
+
+  // Calculate filtered schedule entries based on filtered blocks
+  const filteredEntries = entries.filter(e => {
     const blockId = typeof e.block === 'object' ? e.block.id : e.block;
-    return String(blockId) === String(selectedId);
-  }) : [];
+    if (selectedId) {
+      return String(blockId) === String(selectedId);
+    }
+    return filteredBlockIds.length === 0 || filteredBlockIds.includes(blockId);
+  });
 
   const handleApplySuggestion = (proposal) => {
     alert(`Proposal: ${proposal.title}\n\nChanges:\n${proposal.changes?.map(c => `${c.from} → ${c.to}`).join('\n')}`);
@@ -81,7 +84,7 @@ const ScheduleViewer = ()=>{
           <Form.Group>
             <Form.Label className="small mb-2 fw-bold">Department</Form.Label>
             <Form.Select size="sm" value={selectedDept} onChange={e=>setSelectedDept(e.target.value)}>
-              <option value="">Select Department</option>
+              <option value="">All Departments</option>
               {departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
             </Form.Select>
           </Form.Group>
@@ -89,9 +92,9 @@ const ScheduleViewer = ()=>{
         <Col md={3}>
           <Form.Group>
             <Form.Label className="small mb-2 fw-bold">Sub-Department</Form.Label>
-            <Form.Select size="sm" value={selectedSubDept} onChange={e=>setSelectedSubDept(e.target.value)} disabled={!selectedDept}>
-              <option value="">Select Sub-Department</option>
-              {subDepartments.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+            <Form.Select size="sm" value={selectedSubDept} onChange={e=>setSelectedSubDept(e.target.value)}>
+              <option value="">All Sub-Departments</option>
+              {filteredSubDepts.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
             </Form.Select>
           </Form.Group>
         </Col>
@@ -101,19 +104,18 @@ const ScheduleViewer = ()=>{
             <Form.Control 
               size="sm" 
               type="number" 
-              placeholder="e.g. 1" 
+              placeholder="All Years" 
               value={selectedYear} 
-              onChange={e=>setSelectedYear(e.target.value)} 
-              disabled={!selectedSubDept}
+              onChange={e=>setSelectedYear(e.target.value)}
             />
           </Form.Group>
         </Col>
         <Col md={2}>
           <Form.Group>
             <Form.Label className="small mb-2 fw-bold">Block</Form.Label>
-            <Form.Select size="sm" value={selectedId} onChange={e=>setSelectedId(e.target.value)} disabled={!selectedSubDept}>
-              <option value="">Select Block</option>
-              {blocks.map(b=><option key={b.id} value={b.id}>{b.code || b.name}</option>)}
+            <Form.Select size="sm" value={selectedId} onChange={e=>setSelectedId(e.target.value)}>
+              <option value="">All Blocks</option>
+              {filteredBlocks.map(b=><option key={b.id} value={b.id}>{b.code || b.name}</option>)}
             </Form.Select>
           </Form.Group>
         </Col>
@@ -136,18 +138,18 @@ const ScheduleViewer = ()=>{
     )}
 
     {entries.length === 0 && <Alert variant="info">No schedule data available. Generate a schedule in the Admin Dashboard.</Alert>}
-    {entries.length > 0 && !selectedId && <Alert variant="warning">Select a block to view the schedule.</Alert>}
-    {entries.length > 0 && selectedId && filteredEntries.length === 0 && <Alert variant="warning">No schedule entries for this block.</Alert>}
+    {entries.length > 0 && filteredEntries.length === 0 && <Alert variant="warning">No schedule entries match your filters.</Alert>}
     
     {filteredEntries.length > 0 && (
       <Table striped hover size="sm">
-        <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th></tr></thead>
+        <thead><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th><th>Professor</th><th>Block</th></tr></thead>
         <tbody>{filteredEntries.map(e=>(<tr key={e.id}>
           <td>{e.time_slot? e.time_slot.day: '-'}</td>
           <td>{e.time_slot? (e.time_slot.start_time+'-'+e.time_slot.end_time): '-'}</td>
           <td>{e.course? e.course.code: '-'}</td>
           <td>{e.room? e.room.name: '-'}</td>
           <td>{e.professor? e.professor.name: '-'}</td>
+          <td>{typeof e.block === 'object' ? (e.block.code || e.block.name) : `Block ${e.block}`}</td>
         </tr>))}</tbody>
       </Table>
     )}
