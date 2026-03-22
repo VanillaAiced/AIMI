@@ -13,7 +13,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 import django
 django.setup()
 
-from base.models import Department, SubDepartment, Building, Block, Room, RoomType, School
+from base.models import Department, SubDepartment, Building, Block, Room, RoomType, School, TimeSlot, Professor, Course, Curriculum
+from datetime import time
 
 # Create School
 school, _ = School.objects.get_or_create(
@@ -86,5 +87,97 @@ for idx, building in enumerate(buildings):
             }
         )
         print(f"  ✓ Room: {room_name}")
+
+# Create TimeSlots (Monday-Friday, morningand afternoon slots)
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+time_slots = []
+for day in days:
+    # Morning slot: 8:00 AM - 10:00 AM
+    ts1, _ = TimeSlot.objects.get_or_create(
+        day=day,
+        start_time=time(8, 0),
+        defaults={'end_time': time(10, 0)}
+    )
+    time_slots.append(ts1)
+    print(f"✓ TimeSlot: {day} 8:00-10:00")
+    
+    # Mid-morning slot: 10:00 AM - 12:00 PM
+    ts2, _ = TimeSlot.objects.get_or_create(
+        day=day,
+        start_time=time(10, 0),
+        defaults={'end_time': time(12, 0)}
+    )
+    time_slots.append(ts2)
+    print(f"✓ TimeSlot: {day} 10:00-12:00")
+    
+    # Afternoon slot: 1:00 PM - 3:00 PM
+    ts3, _ = TimeSlot.objects.get_or_create(
+        day=day,
+        start_time=time(13, 0),
+        defaults={'end_time': time(15, 0)}
+    )
+    time_slots.append(ts3)
+    print(f"✓ TimeSlot: {day} 13:00-15:00")
+    
+    # Late afternoon slot: 3:00 PM - 5:00 PM
+    ts4, _ = TimeSlot.objects.get_or_create(
+        day=day,
+        start_time=time(15, 0),
+        defaults={'end_time': time(17, 0)}
+    )
+    time_slots.append(ts4)
+    print(f"✓ TimeSlot: {day} 15:00-17:00")
+
+# Create Professors
+professors = []
+prof_names = ['Dr. Smith', 'Dr. Johnson', 'Dr. Brown', 'Dr. Davis', 'Dr. Wilson', 'Dr. Miller']
+for idx, prof_name in enumerate(prof_names):
+    subdept = SubDepartment.objects.all()[idx % SubDepartment.objects.count()]
+    prof, _ = Professor.objects.get_or_create(
+        name=prof_name,
+        defaults={'sub_department': subdept}
+    )
+    professors.append(prof)
+    print(f"✓ Professor: {prof_name}")
+
+# Create Courses
+courses = []
+course_names = ['Programming 101', 'Data Structures', 'Web Development', 'Database Design', 'Software Engineering', 'Algorithms']
+subdepts = list(SubDepartment.objects.all())[:3]
+for idx, course_name in enumerate(course_names):
+    subdept = subdepts[idx % len(subdepts)]
+    course, _ = Course.objects.get_or_create(
+        name=course_name,
+        defaults={
+            'sub_department': subdept,
+            'units': 3,
+            'frequency_per_week': 2,  # 2 sessions per week
+            'duration_minutes': 120  # 2 hours per session
+        }
+    )
+    courses.append(course)
+    print(f"✓ Course: {course_name}")
+
+# Create Curricula and assign courses + blocks to them
+curricula = []
+for subdept in subdepts:
+    for year in range(1, 4):
+        curr_name = f"{subdept.name} - Year {year}"
+        curriculum, _ = Curriculum.objects.get_or_create(
+            name=curr_name,
+            defaults={'sub_department': subdept}
+        )
+        
+        # Add courses to this curriculum (select by units to spread them)
+        for course in courses[(year-1)*2:(year-1)*2+2]:
+            curriculum.courses.add(course)
+        
+        # Add blocks to this curriculum
+        blocks_for_subdept = Block.objects.filter(sub_department=subdept, year=year)
+        for block in blocks_for_subdept:
+            curriculum.blocks.add(block)
+        
+        curricula.append(curriculum)
+        print(f"✓ Curriculum: {curr_name} with {curriculum.courses.count()} courses and {curriculum.blocks.count()} blocks")
 
 print("\n✅ Database populated successfully!")
