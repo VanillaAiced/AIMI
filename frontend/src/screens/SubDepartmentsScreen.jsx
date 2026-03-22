@@ -15,6 +15,8 @@ const SubDepartmentsScreen = ()=>{
   const [blockCounts, setBlockCounts] = useState({});
   const [managingSub, setManagingSub] = useState(null);
   const [blocks, setBlocks] = useState([]);
+  const [blockCode, setBlockCode] = useState('');
+  const [blockYear, setBlockYear] = useState(1);
   const query = useQuery();
   const deptFilter = query.get('dept');
   const navigate = useNavigate();
@@ -214,11 +216,78 @@ const SubDepartmentsScreen = ()=>{
       </Table>
 
       {/* Blocks Manager Modal */}
-      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); }} fullscreen>
+      <Modal show={!!managingSub} onHide={()=>{ setManagingSub(null); setBlocks([]); setBlockCode(''); setBlockYear(1); }} fullscreen>
         <Modal.Header closeButton>
           <Modal.Title>Blocks for {managingSub?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <div className="mb-4">
+            <h5>Create New Block</h5>
+            <Form onSubmit={async (e)=>{
+              e.preventDefault();
+              if(!managingSub || !blockCode) return;
+              try {
+                const token = localStorage.getItem('accessToken');
+                const headers = { 'Content-Type': 'application/json' };
+                if(token) headers['Authorization'] = `Bearer ${token}`;
+                const resp = await apiFetch('/api/blocks/', { method: 'POST', headers, body: JSON.stringify({code: blockCode, sub_department: managingSub.id, year: blockYear}) });
+                if(resp.ok){
+                  const j = await resp.json();
+                  setBlocks(bs => [...bs, j]);
+                  setBlockCounts(prev => ({...prev, [managingSub.id]: (prev[managingSub.id] || 0) + 1}));
+                  setBlockCode('');
+                  setBlockYear(1);
+                  notify({ text: `Block "${j.code}" created successfully`, variant: 'success' });
+                } else {
+                  let errorMsg = 'Failed to create block';
+                  try {
+                    const errText = await resp.text();
+                    if (errText) {
+                      try {
+                        const errJson = JSON.parse(errText);
+                        if (errJson.detail) errorMsg = errJson.detail;
+                        else if (errJson.code) {
+                          const codeErrors = Array.isArray(errJson.code) ? errJson.code.join(', ') : errJson.code;
+                          errorMsg = `Code: ${codeErrors}`;
+                        }
+                      } catch (parseErr) {
+                        errorMsg = errText.substring(0, 200);
+                      }
+                    }
+                  } catch (e) {
+                    errorMsg = `Error: ${e.message}`;
+                  }
+                  notify({ text: errorMsg, variant: 'danger' });
+                }
+              } catch (err) {
+                notify({ text: `Error: ${err.message}`, variant: 'danger' });
+              }
+            }} className="mb-3">
+              <Form.Group className="mb-2">
+                <Form.Label>Block Code</Form.Label>
+                <Form.Control
+                  value={blockCode}
+                  onChange={(e)=>setBlockCode(e.target.value)}
+                  placeholder="e.g., CS-Y1"
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Year Level</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={blockYear}
+                  min={1}
+                  onChange={(e)=>setBlockYear(parseInt(e.target.value)||1)}
+                  required
+                />
+              </Form.Group>
+              <Button type="submit" size="sm">Create Block</Button>
+            </Form>
+            <hr />
+          </div>
+          
+          <h5>Existing Blocks</h5>
           <Table striped>
             <thead>
               <tr>
