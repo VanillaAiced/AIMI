@@ -72,13 +72,15 @@ const PaymentScreen = () => {
                 </Alert>
               )}
 
-              <div className="mb-3 text-center">
-                <PayPal
-                  amount="5.99"
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                  onCancel={handlePaymentCancel}
-                />
+              <div className="mb-3 d-flex justify-content-center">
+                <div style={{ width: '100%', maxWidth: '400px' }}>
+                  <PayPal
+                    amount="5.99"
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                    onCancel={handlePaymentCancel}
+                  />
+                </div>
               </div>
 
               <div className="mt-3 text-center">
